@@ -1,0 +1,385 @@
+openapi: 3.1.0
+info:
+  title: Local Flag API
+  version: 0.1.0
+  description: 숨은 관광지 탐색, 현장 인증, 포인트와 깃발 기록을 위한 REST API
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local development
+tags:
+  - name: System
+  - name: Spots
+  - name: Check-ins
+  - name: Me
+  - name: Flag skins
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: API 상태 확인
+      responses:
+        '200':
+          description: 정상
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [status, service, version, startedAt]
+                    properties:
+                      status: { type: string, const: ok }
+                      service: { type: string }
+                      version: { type: string }
+                      startedAt: { type: string, format: date-time }
+
+  /spots:
+    get:
+      tags: [Spots]
+      operationId: listSpots
+      summary: 지도 영역 또는 필터 기반 장소 목록
+      parameters:
+        - { $ref: '#/components/parameters/MinLat' }
+        - { $ref: '#/components/parameters/MinLng' }
+        - { $ref: '#/components/parameters/MaxLat' }
+        - { $ref: '#/components/parameters/MaxLng' }
+        - name: contentTypeIds
+          in: query
+          schema: { type: string, example: '12,14,15,28' }
+        - name: grades
+          in: query
+          schema: { type: string, example: 'S,A,B' }
+        - name: decliningArea
+          in: query
+          schema: { type: boolean }
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 장소 목록
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /spots/{spotId}:
+    get:
+      tags: [Spots]
+      operationId: getSpot
+      summary: 장소 상세
+      parameters:
+        - $ref: '#/components/parameters/SpotId'
+      responses:
+        '200':
+          description: 장소 상세
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Spot' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /check-ins/precheck:
+    post:
+      tags: [Check-ins]
+      operationId: precheckCheckIn
+      summary: 포인트 지급 전 GPS·거리·상태 사전 검사
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CheckInRequest' }
+      responses:
+        '200':
+          description: 사전 검사 결과
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/PrecheckResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /check-ins:
+    post:
+      tags: [Check-ins]
+      operationId: createCheckIn
+      summary: 최종 현장 인증과 포인트 적립
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 100 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CheckInRequest' }
+      responses:
+        '201':
+          description: 인증 성공 또는 검토 상태 생성
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/CheckInResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /me:
+    get:
+      tags: [Me]
+      operationId: getMe
+      summary: 내 프로필과 포인트 요약
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 내 정보
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [id, nickname, pointBalance]
+                    properties:
+                      id: { type: string, format: uuid }
+                      nickname: { type: [string, 'null'] }
+                      pointBalance: { type: integer, minimum: 0 }
+                      equippedFlagSkinId: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /me/check-ins:
+    get:
+      tags: [Me]
+      operationId: listMyCheckIns
+      summary: 내 방문 기록
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 방문 기록 목록
+
+  /me/point-ledger:
+    get:
+      tags: [Me]
+      operationId: listMyPointLedger
+      summary: 내 포인트 원장
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 포인트 거래 목록
+
+  /flag-skins:
+    get:
+      tags: [Flag skins]
+      operationId: listFlagSkins
+      summary: 깃발 스킨 목록
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 판매·보유 정보를 포함한 스킨 목록
+
+  /flag-skins/{skinId}/purchase:
+    post:
+      tags: [Flag skins]
+      operationId: purchaseFlagSkin
+      summary: 포인트로 깃발 스킨 구매
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: skinId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 100 }
+      responses:
+        '201': { description: 구매 성공 }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    SpotId:
+      name: spotId
+      in: path
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+    MinLat:
+      name: minLat
+      in: query
+      schema: { type: number, format: double, minimum: 33, maximum: 39 }
+    MinLng:
+      name: minLng
+      in: query
+      schema: { type: number, format: double, minimum: 124, maximum: 132 }
+    MaxLat:
+      name: maxLat
+      in: query
+      schema: { type: number, format: double, minimum: 33, maximum: 39 }
+    MaxLng:
+      name: maxLng
+      in: query
+      schema: { type: number, format: double, minimum: 124, maximum: 132 }
+
+  schemas:
+    Position:
+      type: object
+      additionalProperties: false
+      required: [lat, lng, accuracyM, capturedAt]
+      properties:
+        lat: { type: number, format: double, minimum: 33, maximum: 39 }
+        lng: { type: number, format: double, minimum: 124, maximum: 132 }
+        accuracyM: { type: number, format: double, exclusiveMinimum: 0 }
+        capturedAt: { type: string, format: date-time }
+
+    CheckInRequest:
+      type: object
+      additionalProperties: false
+      required: [spotId, position]
+      properties:
+        spotId: { type: integer, format: int64, minimum: 1 }
+        position: { $ref: '#/components/schemas/Position' }
+
+    PrecheckResult:
+      type: object
+      required: [eligible, spotId, distanceM, allowedRadiusM, accuracyM, reasons, estimatedReward]
+      properties:
+        eligible: { type: boolean }
+        spotId: { type: integer, format: int64 }
+        distanceM: { type: number }
+        allowedRadiusM: { type: number, const: 100 }
+        accuracyM: { type: number }
+        reasons:
+          type: array
+          items:
+            type: string
+            enum: [GPS_INACCURATE, POSITION_STALE, OUT_OF_RANGE, COOLDOWN, DAILY_CAP, ALREADY_REWARDED]
+        estimatedReward: { type: integer, minimum: 0 }
+
+    CheckInResult:
+      type: object
+      required: [checkInId, status, distanceM, reward]
+      properties:
+        checkInId: { type: string, format: uuid }
+        status: { type: string, enum: [SUCCESS, REVIEW] }
+        distanceM: { type: number }
+        reward:
+          type: object
+          required: [points, balance, policyVersion]
+          properties:
+            points: { type: integer, minimum: 0 }
+            balance: { type: integer, minimum: 0 }
+            policyVersion: { type: string }
+            factors: { type: object, additionalProperties: true }
+
+    Spot:
+      type: object
+      required: [id, title, address, contentTypeId, grade, isDecliningArea, estimatedReward, imageUrl, status, location]
+      properties:
+        id: { type: integer, format: int64 }
+        title: { type: string }
+        address: { type: string }
+        contentTypeId: { type: integer }
+        grade: { type: string, enum: [S, A, B, C] }
+        isDecliningArea: { type: boolean }
+        estimatedReward: { type: integer, minimum: 0 }
+        imageUrl: { type: [string, 'null'], format: uri }
+        status: { type: string, enum: [SCHEDULED, ACTIVE, INACTIVE, EXPIRED] }
+        location: { $ref: '#/components/schemas/SimpleLocation' }
+
+    SimpleLocation:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat: { type: number, format: double }
+        lng: { type: number, format: double }
+
+    SpotListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Spot' }
+        meta:
+          type: object
+          required: [nextCursor, hasNext]
+          properties:
+            nextCursor: { type: [string, 'null'] }
+            hasNext: { type: boolean }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, traceId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: object, additionalProperties: true }
+            traceId: { type: string }
+
+  responses:
+    BadRequest:
+      description: 요청 형식 오류
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: 인증 필요 또는 만료
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: 리소스 없음
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: 중복 또는 상태 충돌
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationFailed:
+      description: 위치 또는 정책 검증 실패
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: 요청 또는 일일 한도 초과
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+

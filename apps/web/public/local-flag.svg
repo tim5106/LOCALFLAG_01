@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Local Flag">
+  <rect width="512" height="512" rx="112" fill="#173f35"/>
+  <path d="M168 104v312" fill="none" stroke="#f7f1df" stroke-linecap="round" stroke-width="36"/>
+  <path d="M188 120h194l-45 72 45 72H188z" fill="#f05d3f"/>
+  <circle cx="168" cy="416" r="24" fill="#f7c65d"/>
+</svg>
+

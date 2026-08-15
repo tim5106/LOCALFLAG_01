@@ -1,0 +1,19 @@
+{
+  "name": "Local Flag",
+  "short_name": "Local Flag",
+  "description": "숨은 로컬 명소를 발견하고 현장에서 깃발을 꽂아 보세요.",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f2e9",
+  "theme_color": "#173f35",
+  "icons": [
+    {
+      "src": "/local-flag.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
