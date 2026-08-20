@@ -1,4 +1,4 @@
-import { BottomNavigation } from './components/BottomNavigation';
+import { AppShell } from './components/AppShell';
 import { CheckInPage } from './features/check-in/CheckInPage';
 import { DiscoveryPage } from './features/discovery/DiscoveryPage';
 import { MyFlagPage } from './features/my-flag/MyFlagPage';
@@ -15,12 +15,9 @@ export function App() {
   const ActivePage = pages[activeTab];
 
   return (
-    <div className="app-shell">
-      <div className="app-frame">
-        <ActivePage />
-        <BottomNavigation activeTab={activeTab} onChange={setActiveTab} />
-      </div>
-    </div>
+    <AppShell activeTab={activeTab} onTabChange={setActiveTab}>
+      <ActivePage />
+    </AppShell>
   );
 }
 

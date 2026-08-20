@@ -7,7 +7,7 @@ import { SpotCard } from '../../components/SpotCard';
 export function DiscoveryPage() {
   const spotsQuery = useQuery({
     queryKey: ['spots'],
-    queryFn: ({ signal }) => getSpots(signal),
+    queryFn: ({ signal }) => getSpots({}, signal),
   });
 
   const spots = spotsQuery.data?.data ?? [];

@@ -1,20 +1,38 @@
+import { webEnv } from '../config/env';
+import type { ApiErrorBody, ApiListResponse } from '../types/api';
+import { ApiRequestError } from '../types/api';
 import type { Spot } from '../types/spot';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-
-export interface ApiListResponse<T> {
-  data: T[];
-  meta: {
-    nextCursor: string | null;
-    hasNext: boolean;
-  };
+export interface SpotQuery {
+  minLat?: number;
+  minLng?: number;
+  maxLat?: number;
+  maxLng?: number;
+  q?: string;
+  grades?: string[];
+  decliningArea?: boolean;
+  areaCode?: string;
+  sigunguCode?: string;
+  cursor?: string;
+  limit?: number;
 }
 
-export async function getSpots(signal?: AbortSignal): Promise<ApiListResponse<Spot>> {
-  const response = await fetch(`${API_BASE_URL}/spots?limit=20`, { signal });
+const toQueryString = (query: SpotQuery) => {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) return;
+    params.set(key, Array.isArray(value) ? value.join(',') : String(value));
+  });
+  return params.toString();
+};
+
+export async function getSpots(query: SpotQuery = {}, signal?: AbortSignal): Promise<ApiListResponse<Spot>> {
+  const params = toQueryString({ limit: 20, ...query });
+  const response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal });
 
   if (!response.ok) {
-    throw new Error('장소 목록을 불러오지 못했습니다.');
+    const body = (await response.json().catch(() => undefined)) as ApiErrorBody | undefined;
+    throw new ApiRequestError(response.status, body);
   }
 
   return (await response.json()) as ApiListResponse<Spot>;
@@ -28,7 +46,7 @@ export interface PositionInput {
 }
 
 export async function precheckSpot(spotId: number, position: PositionInput) {
-  const response = await fetch(`${API_BASE_URL}/check-ins/precheck`, {
+  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins/precheck`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ spotId, position }),
@@ -36,9 +54,8 @@ export async function precheckSpot(spotId: number, position: PositionInput) {
 
   const body = (await response.json()) as unknown;
   if (!response.ok) {
-    throw new Error('인증 가능 여부를 확인하지 못했습니다.');
+    throw new ApiRequestError(response.status, body as ApiErrorBody);
   }
 
   return body;
 }
-
