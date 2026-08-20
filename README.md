@@ -1,81 +1,87 @@
 # Local Flag
 
-잘 알려지지 않은 로컬 명소를 발견하고 현장에서 인증해 포인트와 깃발 기록을 쌓는 위치 기반 관광 PWA입니다.
+A location-based tourism PWA where users discover lesser-known local spots, verify their physical presence on site, and accumulate point rewards and flag records.
 
-프로젝트의 제품·협업·API 기준은 [LOCAL_FLAG_PROJECT.md](./LOCAL_FLAG_PROJECT.md)를 참고하세요.
+For product, collaboration, and API standards regarding this project, please refer to [LOCAL_FLAG_PROJECT.md](https://www.google.com/search?q=./LOCAL_FLAG_PROJECT.md).
 
-## 저장소 구조
+## Repository Structure
 
 ```text
 .
 ├─ apps/
-│  ├─ web/                 # React + Vite 모바일 우선 PWA
+│  ├─ web/                 # React + Vite mobile-first PWA
 │  └─ api/                 # Express + TypeScript REST API
 ├─ packages/
-│  └─ contracts/           # OpenAPI 3.1 계약
+│  └─ contracts/           # OpenAPI 3.1 contracts
 ├─ supabase/
-│  └─ migrations/          # PostgreSQL + PostGIS 스키마
+│  └─ migrations/          # PostgreSQL + PostGIS schemas
 ├─ docs/
-│  └─ decisions/           # 기술·정책 결정 기록(ADR)
-└─ LOCAL_FLAG_PROJECT.md   # 프로젝트 기획 및 개발 명세
+│  └─ decisions/           # Architecture & policy Decision Records (ADR)
+└─ LOCAL_FLAG_PROJECT.md   # Project planning and development specification
+
 ```
 
-## 시작하기
+## Getting Started
 
-### 요구 사항
+### Prerequisites
 
-- Node.js 22 이상
-- npm 10 이상
-- 선택: Supabase CLI 또는 Supabase 프로젝트
+* Node.js 22 or higher
+* npm 10 or higher
+* Optional: Supabase CLI or a Supabase project
 
-### 설치
+### Installation
 
 ```bash
 npm install
+
 ```
 
-### 환경변수
+### Environment Variables
 
 ```bash
 cp apps/web/.env.example apps/web/.env
 cp apps/api/.env.example apps/api/.env
+
 ```
 
-Windows PowerShell에서는 다음 명령을 사용합니다.
+On Windows PowerShell, run:
 
 ```powershell
 Copy-Item apps/web/.env.example apps/web/.env
 Copy-Item apps/api/.env.example apps/api/.env
+
 ```
 
-### 개발 서버
+### Development Server
 
-터미널 두 개에서 각각 실행합니다.
+Run the following commands in separate terminal windows:
 
 ```bash
 npm run dev:web
 npm run dev:api
+
 ```
 
-- Web: <http://localhost:5173>
-- API: <http://localhost:4000/api/v1/health>
-- OpenAPI: `packages/contracts/openapi.yaml`
+* Web: [http://localhost:5173](http://localhost:5173)
+* API: [http://localhost:4000/api/v1/health](http://localhost:4000/api/v1/health)
+* OpenAPI: `packages/contracts/openapi.yaml`
 
-## 검증 명령
+## Verification Commands
 
 ```bash
 npm run typecheck
 npm test
 npm run build
+
 ```
 
-## 현재 구현 범위
+## Current Implementation Scope
 
-- 3탭 탐색·현장 인증·마이 플래그 UI 셸
-- 개발용 장소 목록과 API 클라이언트 fallback
-- Express 상태 확인, 장소 조회, 인증 사전 검사 골격
-- 공통 오류 형식과 요청 추적 ID
-- OpenAPI 3.1 기본 계약
-- PostGIS, RLS, 포인트 원장을 포함한 초기 Supabase 마이그레이션
+* 3-tab UI shell: Discovery, On-site Check-in, and My Flag
+* Mock spot list for development and API client fallback
+* Express health check, spot query, and check-in precheck skeleton
+* Standardized error response format and request trace IDs
+* Base OpenAPI 3.1 contracts
+* Initial Supabase migrations including PostGIS, RLS, and point ledger schema
 
-실제 지도, TourAPI 동기화, Supabase Auth, 포인트 트랜잭션은 환경 키를 연결한 뒤 단계적으로 구현합니다.
+Interactive map rendering, TourAPI synchronization, Supabase Auth integration, and point transactions will be implemented incrementally after configuring the required environment keys.
