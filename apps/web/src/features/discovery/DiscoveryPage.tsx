@@ -18,6 +18,8 @@ export function DiscoveryPage() {
       q: discoveryFilters.query || undefined,
       grades: discoveryFilters.grades,
       decliningArea: discoveryFilters.decliningArea || undefined,
+      areaCode: discoveryFilters.areaCode,
+      sigunguCode: discoveryFilters.sigunguCode,
     }, signal),
   });
   const spots = spotsQuery.data?.data ?? [];

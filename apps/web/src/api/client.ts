@@ -17,6 +17,12 @@ export interface SpotQuery {
   limit?: number;
 }
 
+export const prototypeSpots: Spot[] = [
+  { id: 100001, title: '보성 대한다원 전망대', address: '전라남도 보성군', contentTypeId: 12, grade: 'A', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 34.9671, lng: 127.1694 } },
+  { id: 100002, title: '고성 화진포 마을', address: '강원특별자치도 고성군', contentTypeId: 12, grade: 'S', isDecliningArea: true, estimatedReward: 500, imageUrl: null, status: 'ACTIVE', location: { lat: 38.3306, lng: 128.5174 } },
+  { id: 100003, title: '영월 청령포 마을', address: '강원특별자치도 영월군', contentTypeId: 12, grade: 'B', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 37.272, lng: 128.267 } },
+];
+
 const toQueryString = (query: SpotQuery) => {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
@@ -28,14 +34,30 @@ const toQueryString = (query: SpotQuery) => {
 
 export async function getSpots(query: SpotQuery = {}, signal?: AbortSignal): Promise<ApiListResponse<Spot>> {
   const params = toQueryString({ limit: 20, ...query });
-  const response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal });
+  let response: Response;
+  try {
+    response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    return fallbackSpots(query);
+  }
 
   if (!response.ok) {
+    if (response.status >= 500) return fallbackSpots(query);
     const body = (await response.json().catch(() => undefined)) as ApiErrorBody | undefined;
     throw new ApiRequestError(response.status, body);
   }
 
   return (await response.json()) as ApiListResponse<Spot>;
+}
+
+function fallbackSpots(query: SpotQuery): ApiListResponse<Spot> {
+  const grades = query.grades ?? [];
+  const data = prototypeSpots.filter((spot) => !grades.length || grades.includes(spot.grade))
+    .filter((spot) => query.decliningArea === undefined || spot.isDecliningArea === query.decliningArea)
+    .filter((spot) => !query.q || `${spot.title} ${spot.address}`.includes(query.q))
+    .slice(0, query.limit ?? 20);
+  return { data, meta: { nextCursor: null, hasNext: false }, source: 'fallback' };
 }
 
 export interface PositionInput {

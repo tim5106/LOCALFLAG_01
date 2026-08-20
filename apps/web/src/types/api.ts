@@ -6,6 +6,7 @@ export interface ApiMeta {
 export interface ApiListResponse<T> {
   data: T[];
   meta: ApiMeta;
+  source?: 'api' | 'fallback' | 'prototype';
 }
 
 export interface ApiErrorBody {
