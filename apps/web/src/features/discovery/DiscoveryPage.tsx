@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { getSpots } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotCard } from '../../components/SpotCard';
+import { SpotDetail } from '../../components/SpotDetail';
 import { useUiStore } from '../../store/ui-store';
 
 const grades = ['S', 'A', 'B', 'C'] as const;
 
 export function DiscoveryPage() {
-  const { discoveryView, discoveryFilters, setDiscoveryView, setDiscoveryFilters } = useUiStore();
+  const { discoveryView, discoveryFilters, selectedSpot, setDiscoveryView, setDiscoveryFilters, setSelectedSpot } = useUiStore();
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(discoveryFilters.query);
   const spotsQuery = useQuery({
@@ -23,6 +24,7 @@ export function DiscoveryPage() {
     }, signal),
   });
   const spots = spotsQuery.data?.data ?? [];
+  if (selectedSpot) return <SpotDetail spot={selectedSpot} onClose={() => setSelectedSpot(null)} />;
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -71,14 +73,14 @@ export function DiscoveryPage() {
         <button type="button" data-active={discoveryView === 'map'} onClick={() => setDiscoveryView('map')}><Map size={15} /> 지도</button>
         <button type="button" data-active={discoveryView === 'list'} onClick={() => setDiscoveryView('list')}>리스트</button>
       </div>
-      {discoveryView === 'map' && <MapPreview spots={spots} />}
+      {discoveryView === 'map' && <MapPreview spots={spots} onSelect={setSelectedSpot} />}
 
       <section className="section-block">
         <div className="section-heading"><div><p>발견 점수가 높은 곳</p><h2>이번 주 추천 플래그</h2></div><span className="result-count">{spots.length}곳</span></div>
         {spotsQuery.isPending && <StatusCard>숨은 장소를 찾고 있어요...</StatusCard>}
         {spotsQuery.isError && <StatusCard>장소를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</StatusCard>}
         {!spotsQuery.isPending && !spotsQuery.isError && spots.length === 0 && <StatusCard>조건에 맞는 장소가 없어요. 필터를 바꿔보세요.</StatusCard>}
-        <div className="spot-list">{spots.map((spot) => <SpotCard spot={spot} key={spot.id} />)}</div>
+        <div className="spot-list">{spots.map((spot) => <SpotCard spot={spot} key={spot.id} onSelect={setSelectedSpot} />)}</div>
       </section>
     </main>
   );

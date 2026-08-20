@@ -7,10 +7,11 @@ declare global { interface Window { kakao?: any; } }
 
 interface MapPreviewProps {
   spots: Spot[];
+  onSelect?: (spot: Spot) => void;
   onViewportChange?: (viewport: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => void;
 }
 
-export function MapPreview({ spots, onViewportChange }: MapPreviewProps) {
+export function MapPreview({ spots, onSelect, onViewportChange }: MapPreviewProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -57,7 +58,7 @@ export function MapPreview({ spots, onViewportChange }: MapPreviewProps) {
   });
 
   if (mapState === 'ready') return <section className="map-preview map-preview--kakao" aria-label="전국 장소 지도"><div ref={mapElement} className="map-canvas" /><button type="button" className="map-preview__locate" aria-label="현재 위치로 이동" onClick={moveToCurrentLocation}><Navigation size={19} /></button></section>;
-  return <section ref={mapElement} className="map-preview" aria-label="전국 장소 지도"><div className="map-preview__grid" aria-hidden="true" /><div className="map-preview__label"><span>전국 탐색</span><small>{mapState === 'loading' ? '지도를 불러오는 중' : mapState === 'error' ? '지도 키를 확인해주세요' : '개발용 지도 미리보기'}</small></div>{spots.slice(0, 5).map((spot, index) => <button type="button" className="map-pin" style={{ left: `${18 + index * 15}%`, top: `${30 + (index % 3) * 18}%` }} key={spot.id} aria-label={`${spot.title}, ${spot.grade} 등급`} title={spot.title}><FlagShape grade={spot.grade} /></button>)}<button type="button" className="map-preview__locate" aria-label="현재 위치로 이동" onClick={moveToCurrentLocation}><Navigation size={19} /></button></section>;
+  return <section ref={mapElement} className="map-preview" aria-label="전국 장소 지도"><div className="map-preview__grid" aria-hidden="true" /><div className="map-preview__label"><span>전국 탐색</span><small>{mapState === 'loading' ? '지도를 불러오는 중' : mapState === 'error' ? '지도 키를 확인해주세요' : '개발용 지도 미리보기'}</small></div>{spots.slice(0, 5).map((spot, index) => <button type="button" className="map-pin" style={{ left: `${18 + index * 15}%`, top: `${30 + (index % 3) * 18}%` }} key={spot.id} aria-label={`${spot.title}, ${spot.grade} 등급`} title={spot.title} onClick={() => onSelect?.(spot)}><FlagShape grade={spot.grade} /></button>)}<button type="button" className="map-preview__locate" aria-label="현재 위치로 이동" onClick={moveToCurrentLocation}><Navigation size={19} /></button></section>;
 }
 
 function FlagShape({ grade }: { grade: Spot['grade'] }) { return <span className="flag-shape" data-grade={grade}><Flag size={17} /></span>; }
