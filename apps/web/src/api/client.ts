@@ -23,7 +23,7 @@ export const prototypeSpots: Spot[] = [
   { id: 100003, title: '영월 청령포 마을', address: '강원특별자치도 영월군', contentTypeId: 12, grade: 'B', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 37.272, lng: 128.267 } },
 ];
 
-const toQueryString = (query: SpotQuery) => {
+export const toQueryString = (query: SpotQuery) => {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
     if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) return;
