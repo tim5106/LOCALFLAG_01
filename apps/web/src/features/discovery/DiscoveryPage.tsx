@@ -1,26 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { ListFilter, Map, Search, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { getSpots } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotCard } from '../../components/SpotCard';
 import { SpotDetail } from '../../components/SpotDetail';
 import { useUiStore } from '../../store/ui-store';
+import type { ApiListResponse } from '../../types/api';
+import type { Spot } from '../../types/spot';
 
 const grades = ['S', 'A', 'B', 'C'] as const;
 
 export function DiscoveryPage() {
-  const { discoveryView, discoveryFilters, selectedSpot, setDiscoveryView, setDiscoveryFilters, setSelectedSpot } = useUiStore();
+  const { discoveryView, discoveryFilters, mapViewport, selectedSpot, setDiscoveryView, setDiscoveryFilters, setSelectedSpot, setMapViewport } = useUiStore();
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(discoveryFilters.query);
-  const spotsQuery = useQuery({
-    queryKey: ['spots', discoveryFilters],
+  const spotsQuery = useQuery<ApiListResponse<Spot>>({
+    queryKey: ['spots', discoveryFilters, mapViewport],
+    placeholderData: (previous) => previous,
     queryFn: ({ signal }) => getSpots({
       q: discoveryFilters.query || undefined,
       grades: discoveryFilters.grades,
       decliningArea: discoveryFilters.decliningArea || undefined,
       areaCode: discoveryFilters.areaCode,
       sigunguCode: discoveryFilters.sigunguCode,
+      ...mapViewport ?? {},
     }, signal),
   });
   const spots = spotsQuery.data?.data ?? [];
@@ -37,6 +41,9 @@ export function DiscoveryPage() {
       : [...discoveryFilters.grades, grade];
     setDiscoveryFilters({ grades: next });
   };
+  const handleViewportChange = useCallback((viewport: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
+    setMapViewport(viewport);
+  }, [setMapViewport]);
 
   return (
     <main className="page discovery-page">
@@ -73,7 +80,7 @@ export function DiscoveryPage() {
         <button type="button" data-active={discoveryView === 'map'} onClick={() => setDiscoveryView('map')}><Map size={15} /> 지도</button>
         <button type="button" data-active={discoveryView === 'list'} onClick={() => setDiscoveryView('list')}>리스트</button>
       </div>
-      {discoveryView === 'map' && <MapPreview spots={spots} onSelect={setSelectedSpot} />}
+      {discoveryView === 'map' && <MapPreview spots={spots} onSelect={setSelectedSpot} onViewportChange={handleViewportChange} />}
 
       <section className="section-block">
         <div className="section-heading"><div><p>발견 점수가 높은 곳</p><h2>이번 주 추천 플래그</h2></div><span className="result-count">{spots.length}곳</span></div>
