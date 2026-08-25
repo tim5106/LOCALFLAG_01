@@ -1,23 +1,63 @@
+import { webEnv } from '../config/env';
+import type { ApiErrorBody, ApiListResponse } from '../types/api';
+import { ApiRequestError } from '../types/api';
 import type { Spot } from '../types/spot';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-
-export interface ApiListResponse<T> {
-  data: T[];
-  meta: {
-    nextCursor: string | null;
-    hasNext: boolean;
-  };
+export interface SpotQuery {
+  minLat?: number;
+  minLng?: number;
+  maxLat?: number;
+  maxLng?: number;
+  q?: string;
+  grades?: string[];
+  decliningArea?: boolean;
+  areaCode?: string;
+  sigunguCode?: string;
+  cursor?: string;
+  limit?: number;
 }
 
-export async function getSpots(signal?: AbortSignal): Promise<ApiListResponse<Spot>> {
-  const response = await fetch(`${API_BASE_URL}/spots?limit=20`, { signal });
+export const prototypeSpots: Spot[] = [
+  { id: 100001, title: '보성 대한다원 전망대', address: '전라남도 보성군', contentTypeId: 12, grade: 'A', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 34.9671, lng: 127.1694 } },
+  { id: 100002, title: '고성 화진포 마을', address: '강원특별자치도 고성군', contentTypeId: 12, grade: 'S', isDecliningArea: true, estimatedReward: 500, imageUrl: null, status: 'ACTIVE', location: { lat: 38.3306, lng: 128.5174 } },
+  { id: 100003, title: '영월 청령포 마을', address: '강원특별자치도 영월군', contentTypeId: 12, grade: 'B', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 37.272, lng: 128.267 } },
+];
+
+export const toQueryString = (query: SpotQuery) => {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) return;
+    params.set(key, Array.isArray(value) ? value.join(',') : String(value));
+  });
+  return params.toString();
+};
+
+export async function getSpots(query: SpotQuery = {}, signal?: AbortSignal): Promise<ApiListResponse<Spot>> {
+  const params = toQueryString({ limit: 20, ...query });
+  let response: Response;
+  try {
+    response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    return fallbackSpots(query);
+  }
 
   if (!response.ok) {
-    throw new Error('장소 목록을 불러오지 못했습니다.');
+    if (response.status >= 500) return fallbackSpots(query);
+    const body = (await response.json().catch(() => undefined)) as ApiErrorBody | undefined;
+    throw new ApiRequestError(response.status, body);
   }
 
   return (await response.json()) as ApiListResponse<Spot>;
+}
+
+function fallbackSpots(query: SpotQuery): ApiListResponse<Spot> {
+  const grades = query.grades ?? [];
+  const data = prototypeSpots.filter((spot) => !grades.length || grades.includes(spot.grade))
+    .filter((spot) => query.decliningArea === undefined || spot.isDecliningArea === query.decliningArea)
+    .filter((spot) => !query.q || `${spot.title} ${spot.address}`.includes(query.q))
+    .slice(0, query.limit ?? 20);
+  return { data, meta: { nextCursor: null, hasNext: false }, source: 'fallback' };
 }
 
 export interface PositionInput {
@@ -28,7 +68,7 @@ export interface PositionInput {
 }
 
 export async function precheckSpot(spotId: number, position: PositionInput) {
-  const response = await fetch(`${API_BASE_URL}/check-ins/precheck`, {
+  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins/precheck`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ spotId, position }),
@@ -36,9 +76,8 @@ export async function precheckSpot(spotId: number, position: PositionInput) {
 
   const body = (await response.json()) as unknown;
   if (!response.ok) {
-    throw new Error('인증 가능 여부를 확인하지 못했습니다.');
+    throw new ApiRequestError(response.status, body as ApiErrorBody);
   }
 
   return body;
 }
-
