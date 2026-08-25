@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prototypeSpots } from '../domain/spots.js';
 import { HttpError } from '../lib/http-error.js';
+import { fetchJongnoSpots } from '../services/tour-api.js';
 
 const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -11,7 +12,7 @@ const listQuerySchema = z.object({
 
 export const spotsRouter = Router();
 
-spotsRouter.get('/', (request, response) => {
+spotsRouter.get('/', async (request, response) => {
   const query = listQuerySchema.safeParse(request.query);
   if (!query.success) {
     throw new HttpError(400, 'INVALID_QUERY', '장소 검색 조건을 확인해 주세요.', {
@@ -20,18 +21,28 @@ spotsRouter.get('/', (request, response) => {
   }
 
   const gradeFilter = query.data.grades?.split(',');
-  const spots = prototypeSpots
-    .filter((spot) => !gradeFilter || gradeFilter.includes(spot.grade))
+  try {
+    const tourSpots = await fetchJongnoSpots();
+    const spots = tourSpots
+      .filter((spot) => !gradeFilter || (spot.grade !== undefined && gradeFilter.includes(spot.grade)))
+      .filter((spot) => query.data.decliningArea === undefined || spot.isDecliningArea === (query.data.decliningArea === 'true'))
+      .slice(0, query.data.limit);
+    return response.json({ data: spots, meta: { nextCursor: null, hasNext: false, source: 'tour-api', areaCode: '1', sigunguCode: '23' } });
+  } catch {
+    console.warn('[spots] TourAPI failed; returning prototype fallback. See [tour-api] diagnostics above.');
+    const spots = prototypeSpots
+    .filter((spot) => !gradeFilter || (spot.grade !== undefined && gradeFilter.includes(spot.grade)))
     .filter((spot) => (
       query.data.decliningArea === undefined
       || spot.isDecliningArea === (query.data.decliningArea === 'true')
     ))
     .slice(0, query.data.limit);
 
-  response.json({
+  return response.json({
     data: spots,
     meta: { nextCursor: null, hasNext: false, source: 'prototype' },
   });
+  }
 });
 
 spotsRouter.get('/:spotId', (request, response) => {
