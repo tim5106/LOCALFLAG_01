@@ -5,6 +5,7 @@ import { createApp } from '../app.js';
 import type { SpotReadModel } from '../domain/public-spot.js';
 import { HttpError } from '../lib/http-error.js';
 import type { SpotReadRepository } from '../repositories/spot-read-repository.js';
+import type { CheckInRepository } from '../repositories/check-in-repository.js';
 import type { UserReadRepository } from '../repositories/user-read-repository.js';
 
 const fixture: SpotReadModel = {
@@ -18,9 +19,10 @@ const spots: SpotReadRepository = {
 const users: UserReadRepository = {
   findProfile: vi.fn(), updateNickname: vi.fn(), listCheckIns: vi.fn(), listPointLedger: vi.fn(),
 };
+const checkIns: CheckInRepository = { create: vi.fn(), findOwned: vi.fn() };
 const authenticated: RequestHandler = (req, _res, next) => { req.userId = '00000000-0000-0000-0000-000000000001'; next(); };
 
-function app(auth: RequestHandler = authenticated) { return createApp({ spots, users, requireAuth: auth }); }
+function app(auth: RequestHandler = authenticated) { return createApp({ spots, users, checkIns, requireAuth: auth }); }
 
 describe('spot routes', () => {
   beforeEach(() => {

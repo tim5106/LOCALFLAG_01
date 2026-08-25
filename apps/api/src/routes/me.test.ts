@@ -3,6 +3,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import type { SpotReadRepository } from '../repositories/spot-read-repository.js';
+import type { CheckInRepository } from '../repositories/check-in-repository.js';
 import type { UserReadRepository } from '../repositories/user-read-repository.js';
 
 const userId = '00000000-0000-0000-0000-000000000001';
@@ -13,8 +14,9 @@ const spots: SpotReadRepository = {
 const users: UserReadRepository = {
   findProfile: vi.fn(), updateNickname: vi.fn(), listCheckIns: vi.fn(), listPointLedger: vi.fn(),
 };
+const checkIns: CheckInRepository = { create: vi.fn(), findOwned: vi.fn() };
 const profile = { id: userId, nickname: 'Local', pointBalance: 500, status: 'ACTIVE' as const, equippedFlagSkinId: null };
-const app = () => createApp({ spots, users, requireAuth: auth });
+const app = () => createApp({ spots, users, checkIns, requireAuth: auth });
 
 describe('user read routes', () => {
   beforeEach(() => {

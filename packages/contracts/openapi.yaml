@@ -175,7 +175,9 @@ paths:
                   data: { $ref: '#/components/schemas/PrecheckResult' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
 
   /check-ins:
     post:
@@ -194,6 +196,15 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/CheckInRequest' }
       responses:
+        '200':
+          description: 동일 Idempotency-Key 요청의 저장된 결과 재생
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/CheckInResult' }
         '201':
           description: 인증 성공 또는 검토 상태 생성
           content:
@@ -205,9 +216,37 @@ paths:
                   data: { $ref: '#/components/schemas/CheckInResult' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
         '429': { $ref: '#/components/responses/RateLimited' }
+
+  /check-ins/{checkInId}:
+    get:
+      tags: [Check-ins]
+      operationId: getCheckIn
+      summary: 내 체크인 처리 결과 조회
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: checkInId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: 체크인 결과
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/CheckInResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /me:
     get:
@@ -396,24 +435,34 @@ components:
           type: array
           items:
             type: string
-            enum: [GPS_INACCURATE, POSITION_STALE, OUT_OF_RANGE, COOLDOWN, DAILY_CAP, ALREADY_REWARDED]
+            enum: [GPS_INACCURATE, POSITION_STALE, POSITION_FUTURE, OUT_OF_RANGE, COOLDOWN, DAILY_CHECK_IN_CAP, DAILY_POINT_CAP, ALREADY_REWARDED]
         estimatedReward: { type: integer, minimum: 0 }
 
     CheckInResult:
       type: object
-      required: [checkInId, status, distanceM, reward]
+      required: [checkInId, status, distanceM, riskCode, reward]
       properties:
         checkInId: { type: string, format: uuid }
         status: { type: string, enum: [SUCCESS, REVIEW] }
         distanceM: { type: number }
+        riskCode:
+          type: [string, 'null']
+          enum: [IMPOSSIBLE_SPEED, DAILY_CHECK_IN_CAP, DAILY_POINT_CAP, ALREADY_REWARDED, null]
         reward:
           type: object
           required: [points, balance, policyVersion]
           properties:
             points: { type: integer, minimum: 0 }
             balance: { type: integer, minimum: 0 }
-            policyVersion: { type: string }
-            factors: { type: object, additionalProperties: true }
+            policyVersion: { type: string, const: reward-v1 }
+            factors:
+              type: object
+              additionalProperties: false
+              required: [base, areaWeight, quietWeight]
+              properties:
+                base: { type: number, const: 100 }
+                areaWeight: { type: number, enum: [1, 1.5, 2.5] }
+                quietWeight: { type: number, exclusiveMinimum: 0 }
 
     Spot:
       type: object
