@@ -33,6 +33,7 @@ export interface TourApiClientOptions {
   serviceKey: string;
   fetch?: typeof globalThis.fetch;
   mobileApp?: string;
+  sleep?: (milliseconds: number) => Promise<void>;
 }
 
 export interface TourApiPage {
@@ -75,6 +76,15 @@ export class TourApiClient {
     };
   }
 
+  async searchFestival(eventStartDate: string, pageNo = 1, numOfRows = 100): Promise<TourApiPage> {
+    const body = await this.request('searchFestival2', { eventStartDate, pageNo, numOfRows });
+    const actualPage = finiteInteger(body.pageNo, pageNo);
+    const actualRows = finiteInteger(body.numOfRows, numOfRows);
+    const totalCount = finiteInteger(body.totalCount, 0);
+    return { items: this.extractItems(body), pageNo: actualPage, numOfRows: actualRows, totalCount,
+      hasNext: actualPage * actualRows < totalCount };
+  }
+
   async detailCommon(contentId: number): Promise<TourApiSource | undefined> {
     return (await this.detail('detailCommon2', contentId))[0];
   }
@@ -109,6 +119,22 @@ export class TourApiClient {
   }
 
   private async request(
+    operation: string,
+    parameters: Record<string, string | number>,
+  ): Promise<NonNullable<NonNullable<TourApiEnvelope['response']>['body']>> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= 3; attempt += 1) {
+      try { return await this.requestOnce(operation, parameters); }
+      catch (error) {
+        lastError = error;
+        if (!(error instanceof TourApiError) || !error.retryable || attempt === 3) throw error;
+        await (this.options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms))))(100 * 2 ** attempt);
+      }
+    }
+    throw lastError;
+  }
+
+  private async requestOnce(
     operation: string,
     parameters: Record<string, string | number>,
   ): Promise<NonNullable<NonNullable<TourApiEnvelope['response']>['body']>> {

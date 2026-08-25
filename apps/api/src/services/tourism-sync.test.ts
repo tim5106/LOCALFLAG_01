@@ -13,6 +13,7 @@ class MemoryRepository implements TourismRepository {
 
   async createBatchRun(): Promise<string> { return 'batch-1'; }
   async finishBatchRun(_id: string, input: FinishBatchInput): Promise<void> { this.finishes.push(input); }
+  async recalculateScores(): Promise<number> { return this.spots.size; }
   async upsertSpotAndScore(_id: string, spot: NormalizedTourSpot, score: SpotScore): Promise<void> {
     this.spots.set(spot.contentId, { spot, score });
   }

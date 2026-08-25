@@ -18,7 +18,8 @@ export interface FinishBatchInput {
 export interface TourismRepository {
   createBatchRun(jobType: string): Promise<string>;
   finishBatchRun(batchRunId: string, input: FinishBatchInput): Promise<void>;
-  upsertSpotAndScore(batchRunId: string, spot: NormalizedTourSpot, score: SpotScore): Promise<void>;
+  upsertSpotAndScore(batchRunId: string, spot: NormalizedTourSpot, score: SpotScore, status?: 'SCHEDULED' | 'ACTIVE' | 'EXPIRED'): Promise<void>;
+  recalculateScores(batchRunId: string): Promise<number>;
 }
 
 export class PostgresTourismRepository implements TourismRepository {
@@ -56,7 +57,7 @@ export class PostgresTourismRepository implements TourismRepository {
     );
   }
 
-  async upsertSpotAndScore(batchRunId: string, spot: NormalizedTourSpot, score: SpotScore): Promise<void> {
+  async upsertSpotAndScore(batchRunId: string, spot: NormalizedTourSpot, score: SpotScore, status: 'SCHEDULED' | 'ACTIVE' | 'EXPIRED' = 'ACTIVE'): Promise<void> {
     const client = await this.pool.connect();
     try {
       await client.query('begin');
@@ -69,7 +70,7 @@ export class PostgresTourismRepository implements TourismRepository {
          ) values (
            $1, $2, $3, $4,
            extensions.st_setsrid(extensions.st_makepoint($5, $6), 4326)::extensions.geography,
-           $7, $8, $9, $10, $11, 'ACTIVE', $12, $13, $14::jsonb, $15, now()
+           $7, $8, $9, $10, $11, $16, $12, $13, $14::jsonb, $15, now()
          )
          on conflict (content_id) do update set
            content_type_id = excluded.content_type_id,
@@ -91,7 +92,7 @@ export class PostgresTourismRepository implements TourismRepository {
           spot.contentId, spot.contentTypeId, spot.title, spot.address,
           spot.longitude, spot.latitude, spot.areaCode, spot.sigunguCode, declining,
           spot.imageUrl, spot.thumbnailUrl, spot.eventStartDate, spot.eventEndDate,
-          JSON.stringify(spot.rawJson), batchRunId,
+          JSON.stringify(spot.rawJson), batchRunId, status,
         ],
       );
       await client.query(
@@ -121,6 +122,23 @@ export class PostgresTourismRepository implements TourismRepository {
     } finally {
       client.release();
     }
+  }
+
+  async recalculateScores(batchRunId: string): Promise<number> {
+    const result = await this.pool.query(
+      `update public.spot_scores sc set
+         spot_score = round((100 * category_weight) * (1 + media_weight + detail_weight + class_weight), 2),
+         grade = case
+           when (100 * category_weight) * (1 + media_weight + detail_weight + class_weight) >= 200 then 'S'
+           when (100 * category_weight) * (1 + media_weight + detail_weight + class_weight) >= 130 then 'A'
+           when (100 * category_weight) * (1 + media_weight + detail_weight + class_weight) >= 80 then 'B'
+           else 'C' end,
+         score_version = 'spot-score-v1', calculated_at = now()
+       where exists (select 1 from public.tour_spots s where s.content_id = sc.content_id)
+       returning content_id`,
+    );
+    void batchRunId;
+    return result.rowCount ?? result.rows.length;
   }
 
   private async isDecliningArea(

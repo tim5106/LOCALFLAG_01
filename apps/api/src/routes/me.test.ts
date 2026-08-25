@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import type { SpotReadRepository } from '../repositories/spot-read-repository.js';
 import type { CheckInRepository } from '../repositories/check-in-repository.js';
+import type { FlagRepository } from '../repositories/flag-repository.js';
+import type { ReviewRepository } from '../repositories/review-repository.js';
 import type { UserReadRepository } from '../repositories/user-read-repository.js';
 
 const userId = '00000000-0000-0000-0000-000000000001';
@@ -15,8 +17,11 @@ const users: UserReadRepository = {
   findProfile: vi.fn(), updateNickname: vi.fn(), listCheckIns: vi.fn(), listPointLedger: vi.fn(),
 };
 const checkIns: CheckInRepository = { create: vi.fn(), findOwned: vi.fn() };
+const flags = { equip: vi.fn(), getMap: vi.fn() } as unknown as FlagRepository;
+const reviews = {} as ReviewRepository;
+const operations = { tourismSync: vi.fn(), festivalSync: vi.fn(), recalculateScores: vi.fn() };
 const profile = { id: userId, nickname: 'Local', pointBalance: 500, status: 'ACTIVE' as const, equippedFlagSkinId: null };
-const app = () => createApp({ spots, users, checkIns, requireAuth: auth });
+const app = () => createApp({ spots, users, checkIns, flags, reviews, requireAuth: auth, requireInternal: auth, operations });
 
 describe('user read routes', () => {
   beforeEach(() => {
@@ -25,6 +30,8 @@ describe('user read routes', () => {
     vi.mocked(users.updateNickname).mockResolvedValue({ ...profile, nickname: 'Updated' });
     vi.mocked(users.listCheckIns).mockResolvedValue([]);
     vi.mocked(users.listPointLedger).mockResolvedValue([]);
+    vi.mocked(flags.equip).mockResolvedValue('red');
+    vi.mocked(flags.getMap).mockResolvedValue({ equippedFlagSkinId: 'red', visits: [] });
   });
 
   it('returns only the authenticated profile public fields', async () => {
@@ -73,5 +80,13 @@ describe('user read routes', () => {
     expect(response.body.data[0].metadata).toBeUndefined();
     const invalid = await request(app()).get('/api/v1/me/point-ledger?cursor=bad').expect(400);
     expect(invalid.body.error.code).toBe('INVALID_CURSOR');
+  });
+
+  it('equips owned skins through the authenticated repository boundary and returns My Flag map', async () => {
+    await request(app()).put('/api/v1/me/equipped-flag-skin').send({ skinId: 'red' }).expect(200);
+    expect(flags.equip).toHaveBeenCalledWith(userId, 'red');
+    const map = await request(app()).get('/api/v1/me/map').expect(200);
+    expect(flags.getMap).toHaveBeenCalledWith(userId);
+    expect(map.body.data).toEqual({ equippedFlagSkinId: 'red', visits: [] });
   });
 });

@@ -2,6 +2,7 @@ import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { CheckInRuleError } from '../domain/check-in.js';
 import { HttpError } from '../lib/http-error.js';
+import { createRateLimiter } from '../middleware/rate-limit.js';
 import { CheckInService } from '../services/check-in-service.js';
 
 const positionSchema = z.object({
@@ -35,7 +36,8 @@ export function createCheckInsRouter(requireAuth: RequestHandler, service: Check
   const router = Router();
   router.use(requireAuth);
 
-  router.post('/precheck', async (request, response, next) => {
+  const limiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
+  router.post('/precheck', limiter, async (request, response, next) => {
     try {
       const body = checkInSchema.safeParse(request.body);
       if (!body.success) throw new HttpError(400, 'INVALID_POSITION', '인증 위치 정보 형식을 확인해 주세요.', { issues: body.error.issues });
@@ -43,7 +45,7 @@ export function createCheckInsRouter(requireAuth: RequestHandler, service: Check
     } catch (error) { next(mapError(error)); }
   });
 
-  router.post('/', async (request, response, next) => {
+  router.post('/', limiter, async (request, response, next) => {
     try {
       const idempotencyKey = request.header('idempotency-key');
       if (!idempotencyKey) throw new HttpError(400, 'IDEMPOTENCY_KEY_REQUIRED', 'Idempotency-Key 헤더가 필요합니다.');

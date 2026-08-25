@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { createApp } from './app.js';
 import type { SpotReadRepository } from './repositories/spot-read-repository.js';
 import type { CheckInRepository } from './repositories/check-in-repository.js';
+import type { FlagRepository } from './repositories/flag-repository.js';
+import type { ReviewRepository } from './repositories/review-repository.js';
 import type { UserReadRepository } from './repositories/user-read-repository.js';
 
 const spots: SpotReadRepository = {
@@ -15,8 +17,11 @@ const users: UserReadRepository = {
   listCheckIns: vi.fn().mockResolvedValue([]), listPointLedger: vi.fn().mockResolvedValue([]),
 };
 const checkIns: CheckInRepository = { create: vi.fn(), findOwned: vi.fn() };
+const flags = {} as FlagRepository; const reviews = {} as ReviewRepository;
+const internal: RequestHandler = (_req, _res, next) => next();
+const operations = { tourismSync: vi.fn(), festivalSync: vi.fn(), recalculateScores: vi.fn() };
 const unauthorized: RequestHandler = (_request, _response, next) => next(new Error('not used'));
-const app = createApp({ spots, users, checkIns, requireAuth: unauthorized });
+const app = createApp({ spots, users, checkIns, flags, reviews, requireAuth: unauthorized, requireInternal: internal, operations });
 
 describe('Local Flag API', () => {
   it('reports its health', async () => {

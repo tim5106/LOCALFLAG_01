@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { CursorError, decodeCursor, encodeCursor } from '../lib/cursor.js';
 import { HttpError } from '../lib/http-error.js';
 import type { HistoryCursor, UserReadRepository } from '../repositories/user-read-repository.js';
+import { FlagRuleError, type FlagRepository } from '../repositories/flag-repository.js';
 
 const historyQuery = z.object({
   cursor: z.string().min(1).optional(),
@@ -33,7 +34,7 @@ function publicProfile(profile: Awaited<ReturnType<UserReadRepository['findProfi
   };
 }
 
-export function createMeRouter(repository: UserReadRepository, requireAuth: RequestHandler): Router {
+export function createMeRouter(repository: UserReadRepository, flags: FlagRepository, requireAuth: RequestHandler): Router {
   const router = Router();
   router.use(requireAuth);
 
@@ -48,6 +49,20 @@ export function createMeRouter(repository: UserReadRepository, requireAuth: Requ
       if (!body.success) throw new HttpError(400, 'INVALID_BODY', '닉네임 형식을 확인해 주세요.', { issues: body.error.issues });
       response.json({ data: publicProfile(await repository.updateNickname(userId(request), body.data.nickname)) });
     } catch (error) { next(error); }
+  });
+
+  router.put('/equipped-flag-skin', async (request, response, next) => {
+    try {
+      const body = z.object({ skinId: z.string().trim().min(1).max(100).nullable() }).strict().safeParse(request.body);
+      if (!body.success) throw new HttpError(400, 'INVALID_BODY', '장착할 스킨 정보를 확인해 주세요.');
+      response.json({ data: { equippedFlagSkinId: await flags.equip(userId(request), body.data.skinId) } });
+    } catch (error) {
+      next(error instanceof FlagRuleError ? new HttpError(error.status, error.code, error.message) : error);
+    }
+  });
+
+  router.get('/map', async (request, response, next) => {
+    try { response.json({ data: await flags.getMap(userId(request)) }); } catch (error) { next(error); }
   });
 
   router.get('/check-ins', async (request, response, next) => {

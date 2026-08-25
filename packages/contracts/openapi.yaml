@@ -12,6 +12,7 @@ tags:
   - name: Check-ins
   - name: Me
   - name: Flag skins
+  - name: Internal
 
 paths:
   /health:
@@ -335,6 +336,58 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /me/equipped-flag-skin:
+    put:
+      tags: [Me]
+      operationId: equipFlagSkin
+      summary: 보유 깃발 스킨 장착 또는 기본 스킨으로 복귀
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [skinId]
+              properties:
+                skinId: { type: [string, 'null'], maxLength: 100 }
+      responses:
+        '200':
+          description: 장착 상태
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [equippedFlagSkinId]
+                    properties:
+                      equippedFlagSkinId: { type: [string, 'null'] }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /me/map:
+    get:
+      tags: [Me]
+      operationId: getMyFlagMap
+      summary: 중복 제거된 내 방문 지도
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: 내 깃발 지도
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/MyFlagMap' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /flag-skins:
     get:
       tags: [Flag skins]
@@ -343,7 +396,17 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: 판매·보유 정보를 포함한 스킨 목록
+          description: 판매·보유·장착 정보를 포함한 활성 스킨 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/FlagSkin' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /flag-skins/{skinId}/purchase:
     post:
@@ -361,8 +424,82 @@ paths:
           required: true
           schema: { type: string, minLength: 8, maxLength: 100 }
       responses:
-        '201': { description: 구매 성공 }
+        '200':
+          description: 멱등 재시도 결과
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SkinPurchaseResponse' }
+        '201':
+          description: 구매 성공
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SkinPurchaseResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /internal/check-ins/{checkInId}/review:
+    post:
+      tags: [Internal]
+      operationId: resolveReviewCheckIn
+      summary: 내부 REVIEW 체크인 승인 또는 거절
+      security: [{ internalSecret: [] }]
+      parameters:
+        - name: checkInId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [APPROVE, REJECT] }
+      responses:
+        '200': { description: 처리 또는 동일 결정 재생 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /internal/jobs/tour-spots/sync:
+    post:
+      tags: [Internal]
+      operationId: runTourSpotSync
+      summary: 일반 관광지 동기화 배치
+      security: [{ internalSecret: [] }]
+      responses:
+        '200': { description: batch_runs 식별자와 실행 결과 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /internal/jobs/festivals/sync:
+    post:
+      tags: [Internal]
+      operationId: runFestivalSync
+      summary: 축제 동기화와 수명주기 갱신 배치
+      security: [{ internalSecret: [] }]
+      responses:
+        '200': { description: batch_runs 식별자와 실행 결과 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /internal/jobs/spot-scores/recalculate:
+    post:
+      tags: [Internal]
+      operationId: runSpotScoreRecalculation
+      summary: 장소 점수 재계산 배치
+      security: [{ internalSecret: [] }]
+      responses:
+        '200': { description: batch_runs 식별자와 실행 결과 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
 
 components:
   securitySchemes:
@@ -370,6 +507,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    internalSecret:
+      type: apiKey
+      in: header
+      name: X-Internal-Secret
 
   parameters:
     Cursor:
@@ -566,6 +707,50 @@ components:
           type: array
           items: { $ref: '#/components/schemas/PointLedgerItem' }
         meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    FlagSkin:
+      type: object
+      required: [id, name, description, price, assetUrl, owned, equipped]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        price: { type: integer, minimum: 0 }
+        assetUrl: { type: string }
+        owned: { type: boolean }
+        equipped: { type: boolean }
+
+    SkinPurchaseResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [skinId, balance, acquiredAt]
+          properties:
+            skinId: { type: string }
+            balance: { type: integer, minimum: 0 }
+            acquiredAt: { type: string, format: date-time }
+
+    MapVisit:
+      type: object
+      required: [spotId, spotTitle, location, visitedAt, rewardPoints, status]
+      properties:
+        spotId: { type: integer, format: int64 }
+        spotTitle: { type: string }
+        location: { $ref: '#/components/schemas/SimpleLocation' }
+        visitedAt: { type: string, format: date-time }
+        rewardPoints: { type: integer, minimum: 0 }
+        status: { type: string, const: SUCCESS }
+
+    MyFlagMap:
+      type: object
+      required: [equippedFlagSkinId, visits]
+      properties:
+        equippedFlagSkinId: { type: [string, 'null'] }
+        visits:
+          type: array
+          items: { $ref: '#/components/schemas/MapVisit' }
 
     Error:
       type: object

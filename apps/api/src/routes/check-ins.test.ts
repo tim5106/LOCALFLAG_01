@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import { CheckInRuleError } from '../domain/check-in.js';
 import type { CheckInRepository } from '../repositories/check-in-repository.js';
+import type { FlagRepository } from '../repositories/flag-repository.js';
+import type { ReviewRepository } from '../repositories/review-repository.js';
 import type { SpotReadRepository } from '../repositories/spot-read-repository.js';
 import type { UserReadRepository } from '../repositories/user-read-repository.js';
 
@@ -16,7 +18,9 @@ const users: UserReadRepository = {
   findProfile: vi.fn(), updateNickname: vi.fn(), listCheckIns: vi.fn(), listPointLedger: vi.fn(),
 };
 const checkIns: CheckInRepository = { create: vi.fn(), findOwned: vi.fn() };
-const app = () => createApp({ spots, users, checkIns, requireAuth: auth });
+const flags = {} as FlagRepository; const reviews = {} as ReviewRepository;
+const operations = { tourismSync: vi.fn(), festivalSync: vi.fn(), recalculateScores: vi.fn() };
+const app = () => createApp({ spots, users, checkIns, flags, reviews, requireAuth: auth, requireInternal: auth, operations });
 const result = { checkInId: '10000000-0000-4000-8000-000000000001', status: 'SUCCESS' as const,
   distanceM: 42.8, riskCode: null, reward: { points: 150, balance: 650, policyVersion: 'reward-v1',
     factors: { base: 100 as const, areaWeight: 1.5, quietWeight: 1 } } };

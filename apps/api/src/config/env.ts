@@ -29,6 +29,9 @@ export function requireApiEnv() {
     SUPABASE_URL: z.url(),
     SUPABASE_ANON_KEY: z.string().min(1),
     SUPABASE_DB_URL: z.url(),
+    TOUR_API_BASE_URL: z.url(),
+    TOUR_API_SERVICE_KEY: z.string().min(1),
+    INTERNAL_CRON_SECRET: z.string().min(16),
   });
   const apiEnv = apiSchema.safeParse(env);
   if (!apiEnv.success) {
