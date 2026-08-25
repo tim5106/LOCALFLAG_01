@@ -5,7 +5,6 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
-  DEV_AUTH_BYPASS: z.stringbool().default(false),
   SUPABASE_URL: z.url().optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
@@ -24,6 +23,20 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+export function requireApiEnv() {
+  const apiSchema = z.object({
+    SUPABASE_URL: z.url(),
+    SUPABASE_ANON_KEY: z.string().min(1),
+    SUPABASE_DB_URL: z.url(),
+  });
+  const apiEnv = apiSchema.safeParse(env);
+  if (!apiEnv.success) {
+    console.error('Missing or invalid API environment variables.', z.treeifyError(apiEnv.error));
+    throw new Error('API environment validation failed.');
+  }
+  return apiEnv.data;
+}
 
 export function requireTourismSyncEnv() {
   const syncSchema = z.object({

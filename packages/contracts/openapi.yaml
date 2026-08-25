@@ -56,6 +56,15 @@ paths:
         - name: decliningArea
           in: query
           schema: { type: boolean }
+        - name: q
+          in: query
+          schema: { type: string, minLength: 1, maxLength: 100 }
+        - name: areaCode
+          in: query
+          schema: { type: integer, minimum: 0 }
+        - name: sigunguCode
+          in: query
+          schema: { type: integer, minimum: 0 }
         - name: cursor
           in: query
           schema: { type: string }
@@ -70,6 +79,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/SpotListResponse'
         '400': { $ref: '#/components/responses/BadRequest' }
+
+  /spots/recommendations:
+    get:
+      tags: [Spots]
+      operationId: listSpotRecommendations
+      summary: 결정론적 추천 장소 목록
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: 추천 장소 목록
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SpotListResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /spots/nearby:
+    get:
+      tags: [Spots]
+      operationId: listNearbySpots
+      summary: 현재 위치 주변의 인증 가능 장소
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: 33, maximum: 39 }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: 124, maximum: 132 }
+        - name: radiusM
+          in: query
+          schema: { type: integer, minimum: 100, maximum: 10000, default: 2000 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+      responses:
+        '200':
+          description: 거리순 주변 장소
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/NearbySpot' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /spots/{spotId}:
     get:
@@ -164,13 +226,37 @@ paths:
                 properties:
                   data:
                     type: object
-                    required: [id, nickname, pointBalance]
-                    properties:
-                      id: { type: string, format: uuid }
-                      nickname: { type: [string, 'null'] }
-                      pointBalance: { type: integer, minimum: 0 }
-                      equippedFlagSkinId: { type: [string, 'null'] }
+                    $ref: '#/components/schemas/UserProfile'
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      tags: [Me]
+      operationId: updateMe
+      summary: 내 닉네임 변경
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [nickname]
+              properties:
+                nickname: { type: string, minLength: 1, maxLength: 30 }
+      responses:
+        '200':
+          description: 변경된 프로필
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/UserProfile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /me/check-ins:
     get:
@@ -178,9 +264,18 @@ paths:
       operationId: listMyCheckIns
       summary: 내 방문 기록
       security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
       responses:
         '200':
           description: 방문 기록 목록
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckInHistoryResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /me/point-ledger:
     get:
@@ -188,9 +283,18 @@ paths:
       operationId: listMyPointLedger
       summary: 내 포인트 원장
       security: [{ bearerAuth: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
       responses:
         '200':
           description: 포인트 거래 목록
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PointLedgerResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /flag-skins:
     get:
@@ -229,6 +333,15 @@ components:
       bearerFormat: JWT
 
   parameters:
+    Cursor:
+      name: cursor
+      in: query
+      description: 서버가 발급한 불투명 페이지 커서
+      schema: { type: string, minLength: 1 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
     SpotId:
       name: spotId
       in: path
@@ -338,6 +451,73 @@ components:
             nextCursor: { type: [string, 'null'] }
             hasNext: { type: boolean }
 
+    NearbySpot:
+      allOf:
+        - { $ref: '#/components/schemas/Spot' }
+        - type: object
+          required: [distanceM]
+          properties:
+            distanceM: { type: number, minimum: 0 }
+
+    UserProfile:
+      type: object
+      required: [id, nickname, pointBalance, equippedFlagSkinId]
+      properties:
+        id: { type: string, format: uuid }
+        nickname: { type: [string, 'null'], maxLength: 30 }
+        pointBalance: { type: integer, minimum: 0 }
+        equippedFlagSkinId: { type: [string, 'null'] }
+
+    PaginationMeta:
+      type: object
+      required: [nextCursor, hasNext]
+      properties:
+        nextCursor: { type: [string, 'null'] }
+        hasNext: { type: boolean }
+
+    CheckInHistoryItem:
+      type: object
+      required: [checkInId, spotId, spotTitle, status, distanceM, rewardPoints, riskCode, createdAt]
+      properties:
+        checkInId: { type: string, format: uuid }
+        spotId: { type: integer, format: int64 }
+        spotTitle: { type: string }
+        status: { type: string, enum: [SUCCESS, REVIEW, REJECTED] }
+        distanceM: { type: number, minimum: 0 }
+        rewardPoints: { type: integer, minimum: 0 }
+        riskCode: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+
+    CheckInHistoryResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/CheckInHistoryItem' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PointLedgerItem:
+      type: object
+      required: [transactionId, type, amount, balanceAfter, policyVersion, createdAt, checkInId]
+      properties:
+        transactionId: { type: string, format: uuid }
+        type: { type: string, enum: [CHECK_IN, PURCHASE, REVERSAL, ADMIN_ADJUSTMENT] }
+        amount: { type: integer }
+        balanceAfter: { type: integer, minimum: 0 }
+        policyVersion: { type: string }
+        createdAt: { type: string, format: date-time }
+        checkInId: { type: [string, 'null'], format: uuid }
+
+    PointLedgerResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PointLedgerItem' }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }
+
     Error:
       type: object
       required: [error]
@@ -359,6 +539,11 @@ components:
           schema: { $ref: '#/components/schemas/Error' }
     Unauthorized:
       description: 인증 필요 또는 만료
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: 정지된 사용자 또는 접근 금지
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }

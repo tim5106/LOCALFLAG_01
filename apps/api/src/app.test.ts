@@ -1,8 +1,20 @@
+import type { RequestHandler } from 'express';
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createApp } from './app.js';
+import type { SpotReadRepository } from './repositories/spot-read-repository.js';
+import type { UserReadRepository } from './repositories/user-read-repository.js';
 
-const app = createApp();
+const spots: SpotReadRepository = {
+  list: vi.fn().mockResolvedValue([]), findVisibleById: vi.fn().mockResolvedValue(null),
+  recommendations: vi.fn().mockResolvedValue([]), nearby: vi.fn().mockResolvedValue([]),
+};
+const users: UserReadRepository = {
+  findProfile: vi.fn().mockResolvedValue(null), updateNickname: vi.fn().mockResolvedValue(null),
+  listCheckIns: vi.fn().mockResolvedValue([]), listPointLedger: vi.fn().mockResolvedValue([]),
+};
+const unauthorized: RequestHandler = (_request, _response, next) => next(new Error('not used'));
+const app = createApp({ spots, users, requireAuth: unauthorized });
 
 describe('Local Flag API', () => {
   it('reports its health', async () => {
@@ -11,16 +23,9 @@ describe('Local Flag API', () => {
     expect(response.headers['x-request-id']).toBeTruthy();
   });
 
-  it('returns prototype spots', async () => {
-    const response = await request(app).get('/api/v1/spots?limit=2').expect(200);
-    expect(response.body.data).toHaveLength(2);
-    expect(response.body.meta.source).toBe('prototype');
-  });
-
   it('uses the common error envelope', async () => {
     const response = await request(app).get('/api/v1/not-found').expect(404);
     expect(response.body.error.code).toBe('ROUTE_NOT_FOUND');
     expect(response.body.error.traceId).toBeTruthy();
   });
 });
-

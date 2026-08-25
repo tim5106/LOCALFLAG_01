@@ -78,8 +78,9 @@ npm run build
 ## Current Implementation Scope
 
 * 3-tab UI shell: Discovery, On-site Check-in, and My Flag
-* Mock spot list for development and API client fallback
-* Express health check, spot query, and check-in precheck skeleton
+* PostgreSQL/PostGIS-backed discovery, recommendation, nearby, and user read APIs
+* Supabase bearer-token authentication with profile status enforcement
+* Express health check and check-in precheck skeleton
 * Standardized error response format and request trace IDs
 * Base OpenAPI 3.1 contracts
 * Initial Supabase migrations including PostGIS, RLS, and point ledger schema

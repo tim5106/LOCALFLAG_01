@@ -1,9 +1,9 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { distanceInMeters } from '../domain/geo.js';
-import { prototypeSpots } from '../domain/spots.js';
+import { estimateReward } from '../domain/reward.js';
 import { HttpError } from '../lib/http-error.js';
-import { requireAuth } from '../middleware/require-auth.js';
+import type { SpotReadRepository } from '../repositories/spot-read-repository.js';
 
 const positionSchema = z.object({
   lat: z.number().min(33).max(39),
@@ -17,11 +17,12 @@ const precheckSchema = z.object({
   position: positionSchema,
 });
 
-export const checkInsRouter = Router();
-
+export function createCheckInsRouter(requireAuth: RequestHandler, spots: SpotReadRepository): Router {
+const checkInsRouter = Router();
 checkInsRouter.use(requireAuth);
 
-checkInsRouter.post('/precheck', (request, response) => {
+checkInsRouter.post('/precheck', async (request, response, next) => {
+  try {
   const body = precheckSchema.safeParse(request.body);
   if (!body.success) {
     throw new HttpError(400, 'INVALID_BODY', '인증 위치 정보 형식을 확인해 주세요.', {
@@ -29,12 +30,12 @@ checkInsRouter.post('/precheck', (request, response) => {
     });
   }
 
-  const spot = prototypeSpots.find((item) => item.id === body.data.spotId);
+  const spot = await spots.findVisibleById(body.data.spotId);
   if (!spot || spot.status !== 'ACTIVE') {
     throw new HttpError(404, 'SPOT_NOT_FOUND', '인증 가능한 장소를 찾을 수 없습니다.');
   }
 
-  const distanceM = distanceInMeters(body.data.position, spot.location);
+  const distanceM = distanceInMeters(body.data.position, { lat: spot.lat, lng: spot.lng });
   const capturedAgeSeconds = Math.abs(Date.now() - Date.parse(body.data.position.capturedAt)) / 1_000;
   const reasons: string[] = [];
 
@@ -50,9 +51,10 @@ checkInsRouter.post('/precheck', (request, response) => {
       allowedRadiusM: 100,
       accuracyM: body.data.position.accuracyM,
       reasons,
-      estimatedReward: reasons.length === 0 ? spot.estimatedReward : 0,
+      estimatedReward: reasons.length === 0 ? estimateReward(spot).points : 0,
     },
   });
+  } catch (error) { next(error); }
 });
 
 checkInsRouter.post('/', (request, _response) => {
@@ -66,4 +68,7 @@ checkInsRouter.post('/', (request, _response) => {
     'Supabase 포인트 원장 연결 후 최종 인증을 활성화합니다.',
   );
 });
+
+return checkInsRouter;
+}
 
