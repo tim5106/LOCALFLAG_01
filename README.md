@@ -84,4 +84,18 @@ npm run build
 * Base OpenAPI 3.1 contracts
 * Initial Supabase migrations including PostGIS, RLS, and point ledger schema
 
+### TourAPI development sync
+
+After applying the Supabase migration, configure the backend-only
+`SUPABASE_DB_URL` and `TOUR_API_SERVICE_KEY` values
+in `apps/api/.env`, then run:
+
+```bash
+npm run sync:tour-spots
+```
+
+The command fetches paginated TourAPI `*2` records and detail payloads, skips
+unusable coordinates, and transactionally upserts `tour_spots` with its
+`spot_scores` row. Execution status and counts are written to `batch_runs`.
+
 Interactive map rendering, TourAPI synchronization, Supabase Auth integration, and point transactions will be implemented incrementally after configuring the required environment keys.

@@ -9,6 +9,7 @@ const envSchema = z.object({
   SUPABASE_URL: z.url().optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUPABASE_DB_URL: z.url().optional(),
   TOUR_API_BASE_URL: z.url().default('https://apis.data.go.kr/B551011/KorService2'),
   TOUR_API_SERVICE_KEY: z.string().min(1).optional(),
   KAKAO_REST_API_KEY: z.string().min(1).optional(),
@@ -23,4 +24,18 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+export function requireTourismSyncEnv() {
+  const syncSchema = z.object({
+    SUPABASE_DB_URL: z.url(),
+    TOUR_API_BASE_URL: z.url(),
+    TOUR_API_SERVICE_KEY: z.string().min(1),
+  });
+  const syncEnv = syncSchema.safeParse(env);
+  if (!syncEnv.success) {
+    console.error('Missing or invalid backend sync environment variables.', z.treeifyError(syncEnv.error));
+    throw new Error('Tourism sync environment validation failed.');
+  }
+  return syncEnv.data;
+}
 
