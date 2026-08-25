@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+
+const apiDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+config({ path: resolve(apiDirectory, '.env') });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -23,4 +28,6 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+console.info(`[api-config] TOUR_API_SERVICE_KEY configured: ${Boolean(env.TOUR_API_SERVICE_KEY)}`);
 

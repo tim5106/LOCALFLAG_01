@@ -23,7 +23,7 @@ describe('spot API client', () => {
   it('uses filtered fallback data when the API is unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network')));
     const result = await getSpots({ grades: ['S'] });
-    expect(result.source).toBe('fallback');
+    expect(result.meta.source).toBe('fallback');
     expect(result.data.every((spot) => spot.grade === 'S')).toBe(true);
   });
 

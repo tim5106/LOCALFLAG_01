@@ -53,11 +53,11 @@ export async function getSpots(query: SpotQuery = {}, signal?: AbortSignal): Pro
 
 function fallbackSpots(query: SpotQuery): ApiListResponse<Spot> {
   const grades = query.grades ?? [];
-  const data = prototypeSpots.filter((spot) => !grades.length || grades.includes(spot.grade))
+  const data = prototypeSpots.filter((spot) => !grades.length || (spot.grade !== undefined && grades.includes(spot.grade)))
     .filter((spot) => query.decliningArea === undefined || spot.isDecliningArea === query.decliningArea)
     .filter((spot) => !query.q || `${spot.title} ${spot.address}`.includes(query.q))
     .slice(0, query.limit ?? 20);
-  return { data, meta: { nextCursor: null, hasNext: false }, source: 'fallback' };
+  return { data, meta: { nextCursor: null, hasNext: false, source: 'fallback' } };
 }
 
 export interface PositionInput {

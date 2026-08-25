@@ -3,10 +3,13 @@ export interface SpotRecord {
   title: string;
   address: string;
   contentTypeId: number;
-  grade: 'S' | 'A' | 'B' | 'C';
+  grade?: 'S' | 'A' | 'B' | 'C';
   isDecliningArea: boolean;
-  estimatedReward: number;
+  estimatedReward?: number;
   imageUrl: string | null;
+  rewardEligible: boolean;
+  seasonPin: boolean;
+  infoOnly: boolean;
   status: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   location: { lat: number; lng: number };
 }
@@ -21,6 +24,9 @@ export const prototypeSpots: SpotRecord[] = [
     isDecliningArea: true,
     estimatedReward: 250,
     imageUrl: null,
+    rewardEligible: true,
+    seasonPin: false,
+    infoOnly: false,
     status: 'ACTIVE',
     location: { lat: 34.9671, lng: 127.1694 },
   },
@@ -33,6 +39,9 @@ export const prototypeSpots: SpotRecord[] = [
     isDecliningArea: true,
     estimatedReward: 500,
     imageUrl: null,
+    rewardEligible: true,
+    seasonPin: false,
+    infoOnly: false,
     status: 'ACTIVE',
     location: { lat: 38.3306, lng: 128.5174 },
   },
@@ -45,6 +54,9 @@ export const prototypeSpots: SpotRecord[] = [
     isDecliningArea: true,
     estimatedReward: 250,
     imageUrl: null,
+    rewardEligible: true,
+    seasonPin: false,
+    infoOnly: false,
     status: 'ACTIVE',
     location: { lat: 37.272, lng: 128.267 },
   },

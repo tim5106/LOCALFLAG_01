@@ -5,10 +5,13 @@ export interface Spot {
   title: string;
   address: string;
   contentTypeId: number;
-  grade: SpotGrade;
+  grade?: SpotGrade;
   isDecliningArea: boolean;
-  estimatedReward: number;
+  estimatedReward?: number;
   imageUrl: string | null;
+  rewardEligible?: boolean;
+  seasonPin?: boolean;
+  infoOnly?: boolean;
   status: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   location: {
     lat: number;
