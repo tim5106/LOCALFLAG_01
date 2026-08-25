@@ -1,18 +1,23 @@
-export type SpotGrade = 'S' | 'A' | 'B' | 'C';
+export type SpotGrade = 'S' | 'A' | 'B' | 'C' | 'UNRATED';
+export type SpotGeometryType = 'POINT' | 'AREA';
 
 export interface Spot {
   id: number;
   title: string;
   address: string;
   contentTypeId: number;
-  grade: SpotGrade;
+  grade?: SpotGrade;
   isDecliningArea: boolean;
-  estimatedReward: number;
+  estimatedReward?: number;
   imageUrl: string | null;
-  status: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  thumbnailUrl?: string | null;
+  status?: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  geometryType?: SpotGeometryType;
+  checkInEnabled?: boolean;
+  checkInRadiusM?: number;
+  visited?: boolean;
   location: {
     lat: number;
     lng: number;
   };
 }
-
