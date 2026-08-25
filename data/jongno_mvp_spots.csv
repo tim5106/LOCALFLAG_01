@@ -1,0 +1,2 @@
+content_id,title,address,content_type_id,category,lat,lng,image_url,geometry_type,check_in_enabled,check_in_radius_m,review_status,review_note
+129838,"성균관대학교 인문사회과학캠퍼스박물관","서울특별시 종로구 성균관로 25-2 (명륜3가)",14,"문화시설",37.5849607702,126.9969632609,"http://tong.visitkorea.or.kr/cms/resource/09/3556509_image2_1.jpg",POINT,false,100,PENDING_ACCESS,"좌표·이미지 유효. 외부인 출입 가능 여부, 운영시간, 실제 입구 좌표 확인 후 인증 활성화"
