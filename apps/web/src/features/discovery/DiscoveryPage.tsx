@@ -91,7 +91,7 @@ export function DiscoveryPage() {
         {spotsQuery.isError && <StatusCard>장소를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</StatusCard>}
         {!spotsQuery.isPending && !spotsQuery.isError && spots.length === 0 && <StatusCard>조건에 맞는 장소가 없어요. 필터를 바꿔보세요.</StatusCard>}
         {source && <p className="data-source" role="status">데이터 출처: {source === 'tour-api' ? '한국관광공사 TourAPI' : '개발용 fallback'}</p>}
-        <div className="spot-list">{spots.map((spot) => <SpotCard spot={spot} key={spot.id} onSelect={setSelectedSpot} />)}</div>
+        <div className={`spot-list ${discoveryView === 'map' ? 'spot-list--carousel' : 'spot-list--vertical'}`}>{spots.map((spot) => <SpotCard spot={spot} key={spot.id} onSelect={setSelectedSpot} />)}</div>
       </section>
     </main>
   );
