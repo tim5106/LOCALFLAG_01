@@ -12,7 +12,7 @@ async function main(): Promise<void> {
     baseUrl: config.TOUR_API_BASE_URL,
     serviceKey: config.TOUR_API_SERVICE_KEY,
   });
-  const result = await new TourismSyncService(client, repository).run();
+  const result = await new TourismSyncService(client, repository).run(100, config.TOUR_SYNC_LIMIT);
   console.info(`Synced ${result.successCount} spots; ${result.failureCount} skipped/failed. Batch ${result.batchRunId}.`);
 }
 

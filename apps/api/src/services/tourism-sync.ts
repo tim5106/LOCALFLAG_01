@@ -30,18 +30,25 @@ export class TourismSyncService {
     private readonly logger: TourismSyncLogger = defaultLogger,
   ) {}
 
-  async run(pageSize = 100): Promise<TourismSyncResult> {
+  async run(pageSize = 100, sourceLimit?: number): Promise<TourismSyncResult> {
+    if (sourceLimit !== undefined && (!Number.isSafeInteger(sourceLimit) || sourceLimit <= 0)) {
+      throw new Error('Tourism sync source limit must be a positive integer.');
+    }
     const batchRunId = await this.repository.createBatchRun('TOUR_SPOTS_SYNC');
     let successCount = 0;
     let failureCount = 0;
     let pageNo = 1;
+    let selectedCount = 0;
     let progress: BatchProgress | undefined;
 
     try {
       let page: TourApiPage;
       do {
         page = await this.client.areaBasedList(pageNo, pageSize);
-        for (const listItem of page.items) {
+        const remaining = sourceLimit === undefined ? page.items.length : sourceLimit - selectedCount;
+        const selectedItems = sourceLimit === undefined ? page.items : page.items.slice(0, Math.max(0, remaining));
+        selectedCount += selectedItems.length;
+        for (const listItem of selectedItems) {
           try {
             const contentId = Number(listItem.contentid);
             const contentTypeId = Number(listItem.contenttypeid);
@@ -87,6 +94,7 @@ export class TourismSyncService {
           totalCount: page.totalCount,
           processedCount: successCount + failureCount,
         };
+        if (sourceLimit !== undefined && selectedCount >= sourceLimit) break;
         pageNo += 1;
       } while (page.hasNext);
 

@@ -28,6 +28,24 @@ describe('TourApiClient', () => {
     }));
     const client = new TourApiClient({ baseUrl: 'https://example.com', serviceKey: 'secret', fetch });
     await expect(client.detailImage(1)).resolves.toEqual([]);
+    const requestedUrl = new URL(String(fetch.mock.calls[0]?.[0]));
+    expect(requestedUrl.pathname).toBe('/detailImage2');
+    expect(requestedUrl.searchParams.get('imageYN')).toBe('Y');
+    expect(requestedUrl.searchParams.has('subImageYN')).toBe(false);
+  });
+
+  it('preserves top-level TourAPI result errors', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(jsonResponse({
+      responseTime: '2026-08-26T00:00:00Z',
+      resultCode: '10',
+      resultMsg: 'INVALID_REQUEST_PARAMETER_ERROR(subImageYN)',
+    }));
+    const client = new TourApiClient({ baseUrl: 'https://example.com', serviceKey: 'secret', fetch });
+    await expect(client.detailImage(2750144)).rejects.toMatchObject({
+      code: '10',
+      message: 'TourAPI failure: INVALID_REQUEST_PARAMETER_ERROR(subImageYN)',
+      retryable: false,
+    });
   });
 
   it('rejects upstream result failures and malformed JSON', async () => {

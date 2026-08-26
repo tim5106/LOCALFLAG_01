@@ -29,7 +29,7 @@ if (!authClient) throw new Error('Supabase Auth client configuration failed.');
 const requireAuth = createRequireAuth(new SupabaseTokenVerifier(authClient), users);
 const requireInternal = createRequireInternal(config.INTERNAL_CRON_SECRET);
 const operations = {
-  tourismSync: () => new TourismSyncService(tourApi, tourism).run(),
+  tourismSync: () => new TourismSyncService(tourApi, tourism).run(100, config.TOUR_SYNC_LIMIT),
   festivalSync: () => new FestivalSyncService(tourApi, tourism).run(),
   recalculateScores: () => recalculateSpotScores(tourism),
 };

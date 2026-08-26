@@ -6,6 +6,8 @@ interface TourApiHeader {
 }
 
 interface TourApiEnvelope {
+  resultCode?: unknown;
+  resultMsg?: unknown;
   response?: {
     header?: TourApiHeader;
     body?: {
@@ -98,7 +100,7 @@ export class TourApiClient {
   }
 
   async detailImage(contentId: number): Promise<TourApiSource[]> {
-    return this.detail('detailImage2', contentId, { imageYN: 'Y', subImageYN: 'Y' });
+    return this.detail('detailImage2', contentId, { imageYN: 'Y' });
   }
 
   private async detail(
@@ -168,11 +170,12 @@ export class TourApiClient {
     }
 
     const header = envelope.response?.header;
-    const resultCode = String(header?.resultCode ?? '');
+    const resultCode = String(header?.resultCode ?? envelope.resultCode ?? '');
+    const resultMsg = header?.resultMsg ?? envelope.resultMsg;
     if (!['0000', '0'].includes(resultCode)) {
       throw new TourApiError(
         resultCode || 'MALFORMED_RESPONSE',
-        `TourAPI failure: ${String(header?.resultMsg ?? 'missing result message')}`,
+        `TourAPI failure: ${String(resultMsg ?? 'missing result message')}`,
         ['03', '04', '22'].includes(resultCode),
       );
     }

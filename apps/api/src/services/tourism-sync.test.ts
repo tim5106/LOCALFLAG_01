@@ -38,6 +38,19 @@ const source = {
 };
 
 describe('TourismSyncService', () => {
+  function pagedClient(pageSize: number, total: number) {
+    const items = Array.from({ length: total }, (_, index) => ({ ...source, contentid: String(index + 1) }));
+    return {
+      areaBasedList: vi.fn(async (pageNo: number) => {
+        const start = (pageNo - 1) * pageSize;
+        const pageItems = items.slice(start, start + pageSize);
+        return { items: pageItems, pageNo, numOfRows: pageSize, totalCount: total, hasNext: start + pageSize < total };
+      }),
+      detailCommon: vi.fn().mockResolvedValue(undefined), detailIntro: vi.fn().mockResolvedValue(undefined),
+      detailInfo: vi.fn().mockResolvedValue([]), detailImage: vi.fn().mockResolvedValue([]),
+    };
+  }
+
   it('upserts the spot and its score, and remains idempotent on repeated sync', async () => {
     const repository = new MemoryRepository();
     const firstClient = client([source]);
@@ -72,5 +85,32 @@ describe('TourismSyncService', () => {
     expect(repository.finishes).toEqual([expect.objectContaining({
       status: 'FAILED', successCount: 0, failureCount: 0, errorSummary: 'upstream down',
     })]);
+  });
+
+  it('preserves unlimited pagination behavior when no limit is provided', async () => {
+    const repository = new MemoryRepository();
+    const api = pagedClient(3, 7);
+    const result = await new TourismSyncService(api, repository).run(3);
+    expect(result.successCount).toBe(7);
+    expect(api.areaBasedList).toHaveBeenCalledTimes(3);
+    expect(api.detailImage).toHaveBeenCalledTimes(7);
+  });
+
+  it('selects at most five source spots across pages', async () => {
+    const repository = new MemoryRepository();
+    const api = pagedClient(3, 10);
+    const result = await new TourismSyncService(api, repository).run(3, 5);
+    expect(result.successCount).toBe(5);
+    expect(repository.spots.size).toBe(5);
+    expect(api.areaBasedList).toHaveBeenCalledTimes(2);
+    expect(api.detailCommon).toHaveBeenCalledTimes(5);
+  });
+
+  it('stops within the first page without fetching an unnecessary later page', async () => {
+    const repository = new MemoryRepository();
+    const api = pagedClient(10, 25);
+    await new TourismSyncService(api, repository).run(10, 2);
+    expect(api.areaBasedList).toHaveBeenCalledTimes(1);
+    expect(api.detailInfo).toHaveBeenCalledTimes(2);
   });
 });
