@@ -2,6 +2,7 @@ import { webEnv } from '../config/env';
 import type { ApiErrorBody, ApiListResponse } from '../types/api';
 import { ApiRequestError } from '../types/api';
 import type { Spot } from '../types/spot';
+import { getAccessToken } from '../features/auth/auth';
 
 export interface SpotQuery {
   minLat?: number;
@@ -70,7 +71,7 @@ export interface PositionInput {
 export async function precheckSpot(spotId: number, position: PositionInput) {
   const response = await fetch(`${webEnv.apiBaseUrl}/check-ins/precheck`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
     body: JSON.stringify({ spotId, position }),
   });
 
@@ -81,3 +82,14 @@ export async function precheckSpot(spotId: number, position: PositionInput) {
 
   return body;
 }
+
+export async function createCheckIn(spotId: number, position: PositionInput) {
+  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) }, body: JSON.stringify({ spotId, position }) });
+  const body = await response.json() as unknown;
+  if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody);
+  return body;
+}
+
+export async function getMe() { return authorizedGet('/me'); }
+export async function getFlagSkins() { return authorizedGet('/flag-skins'); }
+async function authorizedGet(path: string) { const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { headers: { ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) } }); const body = await response.json() as unknown; if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody); return body; }
