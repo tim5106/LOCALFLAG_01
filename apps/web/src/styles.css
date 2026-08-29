@@ -30,6 +30,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .auth-form input { padding: 12px; border: 1px solid #ded9cd; border-radius: 12px; outline-color: #173f35; background: #fff; }
 .auth-form small { color: #89938f; font-size: 10px; text-align: center; }
 .auth-error { margin: 0; color: #c44b35; font-size: 11px; line-height: 1.5; }
+.precheck-success { margin: 10px 0 0; color: #267653; font-size: 11px; font-weight: 700; }
 .primary-button:disabled { opacity: .6; cursor: wait; }
 .spin { animation: spin .9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
