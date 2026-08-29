@@ -84,7 +84,7 @@ export function DiscoveryPage() {
         <button type="button" data-active={discoveryView === 'map'} onClick={() => setDiscoveryView('map')}><Map size={15} /> 지도</button>
         <button type="button" data-active={discoveryView === 'list'} onClick={() => setDiscoveryView('list')}>리스트</button>
       </div>
-      {discoveryView === 'map' && <MapPreview spots={mapSpots} onSelect={setSelectedSpot} onViewportChange={handleViewportChange} />}
+      {discoveryView === 'map' && <MapPreview spots={mapSpots} selectedSpot={selectedSpot} onSelect={setSelectedSpot} onViewportChange={handleViewportChange} />}
       {selectedSpot && <SpotMapSheet spot={selectedSpot} onClose={() => setSelectedSpot(null)} onDetail={() => { setDetailSpot(selectedSpot); setSelectedSpot(null); }} />}
 
       <section className="section-block">

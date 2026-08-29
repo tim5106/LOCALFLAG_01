@@ -12,6 +12,12 @@ export interface Spot {
   rewardEligible?: boolean;
   seasonPin?: boolean;
   infoOnly?: boolean;
+  geometryType?: 'POINT' | 'AREA' | 'EXCLUDE';
+  checkInEnabled?: boolean;
+  checkInCompleted?: boolean;
+  checkInRadiusM?: number;
+  reviewStatus?: string;
+  reviewNote?: string;
   status: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   location: {
     lat: number;

@@ -104,6 +104,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .spot-card p { display: flex; align-items: center; gap: 4px; margin: 0; color: #78847f; font-size: 11px; }
 .spot-card__meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .spot-card__meta span { padding: 4px 6px; border-radius: 7px; background: #edf4ed; color: #42705f; font-size: 9px; font-weight: 800; }
+.spot-status { background: #fff3dc !important; color: #946520 !important; }
+.spot-status--enabled { background: #dff2e8 !important; color: #267653 !important; }
 .spot-card__meta strong { color: #d54d35; font-size: 12px; }
 .status-card { padding: 16px; border: 1px dashed #cfc8b7; border-radius: 16px; color: #66736e; background: #fffdf8; font-size: 12px; line-height: 1.6; }
 .data-source { margin: 0 0 10px; color: #70817a; font-size: 10px; }
@@ -184,6 +186,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .bottom-nav { position: fixed; left: 50%; right: auto; bottom: 14px; z-index: 20; display: grid; grid-template-columns: repeat(3, 1fr); width: min(calc(100% - 28px), 452px); padding: 8px; border: 1px solid rgba(255,255,255,.7); border-radius: 24px; background: rgba(255,255,255,.9); box-shadow: 0 16px 42px rgba(27, 57, 48, .18); backdrop-filter: blur(18px); transform: translateX(-50%); }
 .bottom-nav__item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: 0; border-radius: 16px; background: transparent; color: #89938f; font-size: 10px; font-weight: 700; cursor: pointer; }
 .bottom-nav__item[data-active="true"] { background: #173f35; color: #fff; }
+.kakao-spot-marker { display: grid; place-items: center; width: 32px; height: 40px; padding: 0; border: 3px solid #fff7e4; border-radius: 50% 50% 50% 8px; background: #257e68; box-shadow: 0 5px 10px rgba(20,58,49,.28); transform: rotate(-45deg); cursor: pointer; }
+.kakao-spot-marker span { display: block; width: 9px; height: 9px; border-radius: 50%; background: #fff; transform: rotate(45deg); }
+.kakao-spot-marker--pending { background: #e3a43c; }
+.kakao-spot-marker--check-in { background: #d54d35; box-shadow: 0 0 0 4px rgba(213,77,53,.18), 0 5px 10px rgba(20,58,49,.28); }
+.kakao-spot-marker--completed { background: #6f4cc4; }
+.kakao-spot-marker--selected { outline: 4px solid #f0b847; outline-offset: 3px; }
 
 @media (min-width: 600px) {
   .app-shell { padding: 28px; }
