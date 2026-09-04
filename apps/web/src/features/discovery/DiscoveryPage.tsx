@@ -5,9 +5,11 @@ import { getSpots } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotCard } from '../../components/SpotCard';
 import { SpotDetail } from '../../components/SpotDetail';
+import { SpotMapSheet } from '../../components/SpotMapSheet';
 import { useUiStore } from '../../store/ui-store';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
+import shortlistData from '../../../../../data/jongno_mvp_shortlist.json';
 
 const grades = ['S', 'A', 'B', 'C'] as const;
 
@@ -15,20 +17,20 @@ export function DiscoveryPage() {
   const { discoveryView, discoveryFilters, mapViewport, selectedSpot, setDiscoveryView, setDiscoveryFilters, setSelectedSpot, setMapViewport } = useUiStore();
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(discoveryFilters.query);
+  const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', discoveryFilters, mapViewport],
     placeholderData: (previous) => previous,
     queryFn: ({ signal }) => getSpots({
+      areaCode: '1', sigunguCode: '23', limit: 20,
       q: discoveryFilters.query || undefined,
       grades: discoveryFilters.grades,
       decliningArea: discoveryFilters.decliningArea || undefined,
-      areaCode: discoveryFilters.areaCode,
-      sigunguCode: discoveryFilters.sigunguCode,
       ...mapViewport ?? {},
     }, signal),
   });
   const spots = spotsQuery.data?.data ?? [];
-  if (selectedSpot) return <SpotDetail spot={selectedSpot} onClose={() => setSelectedSpot(null)} />;
+  if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,6 +47,8 @@ export function DiscoveryPage() {
     setMapViewport(viewport);
   }, [setMapViewport]);
 
+  const source = spotsQuery.data?.meta.source;
+  const mapSpots = Array.from(new globalThis.Map([...spots, ...shortlistData.data].map((spot) => [spot.id, spot])).values()) as Spot[];
   return (
     <main className="page discovery-page">
       <header className="hero">
@@ -80,14 +84,16 @@ export function DiscoveryPage() {
         <button type="button" data-active={discoveryView === 'map'} onClick={() => setDiscoveryView('map')}><Map size={15} /> 지도</button>
         <button type="button" data-active={discoveryView === 'list'} onClick={() => setDiscoveryView('list')}>리스트</button>
       </div>
-      {discoveryView === 'map' && <MapPreview spots={spots} onSelect={setSelectedSpot} onViewportChange={handleViewportChange} />}
+      {discoveryView === 'map' && <MapPreview spots={mapSpots} onSelect={setSelectedSpot} onViewportChange={handleViewportChange} />}
+      {selectedSpot && <SpotMapSheet spot={selectedSpot} onClose={() => setSelectedSpot(null)} onDetail={() => { setDetailSpot(selectedSpot); setSelectedSpot(null); }} />}
 
       <section className="section-block">
-        <div className="section-heading"><div><p>발견 점수가 높은 곳</p><h2>이번 주 추천 플래그</h2></div><span className="result-count">{spots.length}곳</span></div>
+        <div className="section-heading"><div><p>발견 점수가 높은 곳</p><h2>이번 주 추천 플래그</h2></div><span className="result-count">{mapSpots.length}곳</span></div>
         {spotsQuery.isPending && <StatusCard>숨은 장소를 찾고 있어요...</StatusCard>}
         {spotsQuery.isError && <StatusCard>장소를 불러오지 못했어요. 잠시 후 다시 시도해주세요.</StatusCard>}
         {!spotsQuery.isPending && !spotsQuery.isError && spots.length === 0 && <StatusCard>조건에 맞는 장소가 없어요. 필터를 바꿔보세요.</StatusCard>}
-        <div className="spot-list">{spots.map((spot) => <SpotCard spot={spot} key={spot.id} onSelect={setSelectedSpot} />)}</div>
+        {source && <p className="data-source" role="status">데이터 출처: {source === 'tour-api' ? '한국관광공사 TourAPI' : '개발용 fallback'}</p>}
+        <div className={`spot-list ${discoveryView === 'map' ? 'spot-list--carousel' : 'spot-list--vertical'}`}>{mapSpots.map((spot) => <SpotCard spot={spot} key={spot.id} onSelect={setSelectedSpot} />)}</div>
       </section>
     </main>
   );

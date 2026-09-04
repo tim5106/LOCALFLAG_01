@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 export function parseTourSyncLimit(value: string | undefined): number | undefined {
@@ -12,6 +14,9 @@ export function parseTourSyncLimit(value: string | undefined): number | undefine
   }
   return parsed;
 }
+
+const apiDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+config({ path: resolve(apiDirectory, '.env') });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -75,4 +80,6 @@ export function requireTourismSyncEnv() {
   }
   return syncEnv.data;
 }
+
+console.info(`[api-config] TOUR_API_SERVICE_KEY configured: ${Boolean(env.TOUR_API_SERVICE_KEY)}`);
 

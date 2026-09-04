@@ -2,7 +2,17 @@
 
 A location-based tourism PWA where users discover lesser-known local spots, verify their physical presence on site, and accumulate point rewards and flag records.
 
-For product, collaboration, and API standards regarding this project, please refer to [LOCAL_FLAG_PROJECT.md](https://www.google.com/search?q=./LOCAL_FLAG_PROJECT.md).
+For product, collaboration, and API standards regarding this project, please refer to [LOCAL_FLAG_PROJECT.md](./LOCAL_FLAG_PROJECT.md).
+
+## 팀장용 1주차 운영 자료
+
+- [MVP 의사결정안](./docs/product/MVP_DECISIONS.md)
+- [TourAPI 데이터 계약](./docs/product/TOUR_API_MAPPING.md)
+- [1주차 통합 완료 기준](./docs/product/WEEK1_ACCEPTANCE_CRITERIA.md)
+- [담당자별 후속 작업](./docs/product/NEXT_ACTIONS.md)
+- [종로구 원본 데이터 검수 결과](./docs/product/JONGNO_DATA_REVIEW.md)
+- [종로구 후보 검수표](./data/jongno_mvp_spots.csv)
+- [개발 전달용 MVP 후보 JSON](./data/jongno_mvp_shortlist.json)
 
 ## Repository Structure
 
@@ -16,7 +26,10 @@ For product, collaboration, and API standards regarding this project, please ref
 ├─ supabase/
 │  └─ migrations/          # PostgreSQL + PostGIS schemas
 ├─ docs/
-│  └─ decisions/           # Architecture & policy Decision Records (ADR)
+│  ├─ decisions/           # Architecture & policy Decision Records (ADR)
+│  └─ product/             # Product decisions, API mapping, and acceptance criteria
+├─ data/
+│  └─ jongno_mvp_spots.csv # Team lead's candidate review sheet
 └─ LOCAL_FLAG_PROJECT.md   # Project planning and development specification
 
 ```
@@ -115,5 +128,3 @@ endpoints with the secret in `X-Internal-Secret`:
 
 The same internal authentication protects check-in REVIEW resolution. Never
 place the internal secret in frontend environment variables or client code.
-
-Interactive map rendering, TourAPI synchronization, Supabase Auth integration, and point transactions will be implemented incrementally after configuring the required environment keys.

@@ -1,12 +1,14 @@
 export interface ApiMeta {
   nextCursor: string | null;
   hasNext: boolean;
+  source?: 'api' | 'fallback' | 'prototype' | 'tour-api';
+  areaCode?: string;
+  sigunguCode?: string;
 }
 
 export interface ApiListResponse<T> {
   data: T[];
   meta: ApiMeta;
-  source?: 'api' | 'fallback' | 'prototype';
 }
 
 export interface ApiErrorBody {
