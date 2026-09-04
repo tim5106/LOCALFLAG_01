@@ -29,6 +29,10 @@ export function DiscoveryPage() {
     }, signal),
   });
   const spots = spotsQuery.data?.data ?? [];
+  const handleViewportChange = useCallback((viewport: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
+    setMapViewport(viewport);
+  }, [setMapViewport]);
+
   if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -42,10 +46,6 @@ export function DiscoveryPage() {
       : [...discoveryFilters.grades, grade];
     setDiscoveryFilters({ grades: next });
   };
-  const handleViewportChange = useCallback((viewport: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
-    setMapViewport(viewport);
-  }, [setMapViewport]);
-
   const source = spotsQuery.data?.meta.source;
   return (
     <main className="page discovery-page">
