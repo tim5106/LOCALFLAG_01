@@ -2,6 +2,7 @@ import { LocateFixed } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { webEnv } from '../config/env';
 import type { Spot } from '../types/spot';
+import { calculateDistanceMeters, CHECK_IN_RADIUS_METERS } from '../features/check-in/distance';
 
 declare global { interface Window { kakao?: any; } }
 interface Coordinates { lat: number; lng: number; accuracy?: number | null; }
@@ -37,7 +38,7 @@ export function CheckInMap({ position, spots = [], selectedSpot, onSelect }: { p
     else if (position.accuracy && Number.isFinite(position.accuracy)) circleRef.current = new window.kakao.maps.Circle({ map: mapRef.current, center: point, radius: position.accuracy, strokeWeight: 1, strokeColor: '#2b9a6f', strokeOpacity: .7, fillColor: '#2b9a6f', fillOpacity: .12 });
   }, [position, state]);
 
-  useEffect(() => { if (state !== 'ready' || !window.kakao || !mapRef.current) return; spotMarkersRef.current.forEach((marker) => marker.setMap(null)); spotMarkersRef.current = spots.filter((spot) => spot.geometryType !== 'EXCLUDE' && Number.isFinite(spot.location.lat) && Number.isFinite(spot.location.lng)).map((spot) => { const marker = new window.kakao.maps.Marker({ map: mapRef.current, position: new window.kakao.maps.LatLng(spot.location.lat, spot.location.lng), title: spot.title }); window.kakao.maps.event.addListener(marker, 'click', () => onSelect?.(spot)); return marker; }); return () => spotMarkersRef.current.forEach((marker) => marker.setMap(null)); }, [spots, state, onSelect]);
+  useEffect(() => { if (state !== 'ready' || !window.kakao || !mapRef.current) return; spotMarkersRef.current.forEach((marker) => marker.setMap(null)); spotMarkersRef.current = spots.filter((spot) => spot.geometryType !== 'EXCLUDE' && Number.isFinite(spot.location.lat) && Number.isFinite(spot.location.lng)).map((spot) => { const distance = position ? calculateDistanceMeters(position.lat, position.lng, spot.location.lat, spot.location.lng) : Infinity; const available = spot.checkInEnabled === true && spot.checkInCompleted !== true && spot.reviewStatus !== 'PENDING' && distance <= (spot.checkInRadiusM ?? CHECK_IN_RADIUS_METERS); const completed = spot.checkInCompleted === true; const marker = new window.kakao.maps.Marker({ map: mapRef.current, position: new window.kakao.maps.LatLng(spot.location.lat, spot.location.lng), title: `${spot.title} ${completed ? '인증 완료' : available ? '현장 인증 가능' : '인증 불가'}` }); if (available) marker.setZIndex(2); if (completed) marker.setZIndex(3); window.kakao.maps.event.addListener(marker, 'click', () => onSelect?.(spot)); return marker; }); return () => spotMarkersRef.current.forEach((marker) => marker.setMap(null)); }, [spots, position, state, onSelect]);
   useEffect(() => { if (state === 'ready' && selectedSpot && window.kakao && mapRef.current) mapRef.current.panTo(new window.kakao.maps.LatLng(selectedSpot.location.lat, selectedSpot.location.lng)); }, [selectedSpot, state]);
 
   const moveToCurrentLocation = () => {
