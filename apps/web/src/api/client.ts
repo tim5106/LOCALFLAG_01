@@ -1,8 +1,9 @@
 import { webEnv } from '../config/env';
 import type { ApiErrorBody, ApiListResponse } from '../types/api';
-import { ApiRequestError } from '../types/api';
+import { ApiRequestError, CheckInApiError } from '../types/api';
 import type { Spot } from '../types/spot';
 import { getAccessToken } from '../features/auth/auth';
+import { buildCheckInPayload, buildPrecheckPayload, type CheckInPosition, type CheckInResponse, type CheckInResult, type PrecheckResult } from '../features/check-in/api-types';
 
 export interface SpotQuery {
   minLat?: number;
@@ -61,33 +62,28 @@ function fallbackSpots(query: SpotQuery): ApiListResponse<Spot> {
   return { data, meta: { nextCursor: null, hasNext: false, source: 'fallback' } };
 }
 
-export interface PositionInput {
-  lat: number;
-  lng: number;
-  accuracyM: number;
-  capturedAt: string;
-}
+export type PositionInput = CheckInPosition;
 
-export async function precheckSpot(spotId: number, position: PositionInput) {
+export async function precheckSpot(spotId: number | string, position: PositionInput): Promise<CheckInResponse<PrecheckResult>> {
   const response = await fetch(`${webEnv.apiBaseUrl}/check-ins/precheck`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
-    body: JSON.stringify({ spotId, position }),
+    body: JSON.stringify(buildPrecheckPayload(spotId, position)),
   });
 
   const body = (await response.json()) as unknown;
   if (!response.ok) {
-    throw new ApiRequestError(response.status, body as ApiErrorBody);
+    throw new CheckInApiError(response.status, body as ApiErrorBody);
   }
 
-  return body;
+  return body as CheckInResponse<PrecheckResult>;
 }
 
-export async function createCheckIn(spotId: number, position: PositionInput) {
-  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) }, body: JSON.stringify({ spotId, position }) });
+export async function createCheckIn(spotId: number | string, position: PositionInput): Promise<CheckInResponse<CheckInResult>> {
+  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) }, body: JSON.stringify(buildCheckInPayload(spotId, position)) });
   const body = await response.json() as unknown;
-  if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody);
-  return body;
+  if (!response.ok) throw new CheckInApiError(response.status, body as ApiErrorBody);
+  return body as CheckInResponse<CheckInResult>;
 }
 
 export async function getMe() { return authorizedGet('/me'); }

@@ -33,3 +33,15 @@ export class ApiRequestError extends Error {
     this.traceId = body?.error?.traceId;
   }
 }
+
+export class CheckInApiError extends ApiRequestError {
+  readonly isNotImplemented: boolean;
+  readonly isSpotUnavailable: boolean;
+
+  constructor(status: number, body?: ApiErrorBody) {
+    super(status, body);
+    this.name = 'CheckInApiError';
+    this.isNotImplemented = status === 501;
+    this.isSpotUnavailable = status === 404 && body?.error?.code === 'SPOT_NOT_FOUND';
+  }
+}
