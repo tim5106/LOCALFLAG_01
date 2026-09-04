@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 140" role="img" aria-label="Forest Scout flag skin">
+  <defs>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#173f35" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M48 24v94" fill="none" stroke="#173f35" stroke-linecap="round" stroke-width="10"/>
+    <path d="M55 28h84l-18 24 18 24H55z" fill="#257e68"/>
+    <path d="m91 37 13 20H78z" fill="#fff8e9"/>
+    <path d="M91 48v18" fill="none" stroke="#fff8e9" stroke-linecap="round" stroke-width="5"/>
+    <circle cx="48" cy="118" r="10" fill="#b9d2c5"/>
+  </g>
+</svg>
