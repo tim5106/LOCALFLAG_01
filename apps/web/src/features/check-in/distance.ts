@@ -1,4 +1,4 @@
-export const CHECK_IN_RADIUS_METERS = 100;
+export const CHECK_IN_RADIUS_METERS = 30;
 
 const toRadians = (degrees: number) => degrees * Math.PI / 180;
 
