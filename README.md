@@ -100,8 +100,8 @@ The command fetches paginated TourAPI `*2` records and detail payloads, skips
 unusable coordinates, and transactionally upserts `tour_spots` with its
 `spot_scores` row. Execution status and counts are written to `batch_runs`.
 For development smoke tests only, set `TOUR_SYNC_LIMIT` to a positive integer
-to cap selected `areaBasedList2` source spots. Leave it empty for the normal,
-unlimited synchronization behavior.
+to cap selected tourism or festival source spots. Leave it empty for the
+normal, unlimited synchronization behavior.
 
 ### Internal operations
 

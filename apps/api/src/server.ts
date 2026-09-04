@@ -30,7 +30,7 @@ const requireAuth = createRequireAuth(new SupabaseTokenVerifier(authClient), use
 const requireInternal = createRequireInternal(config.INTERNAL_CRON_SECRET);
 const operations = {
   tourismSync: () => new TourismSyncService(tourApi, tourism).run(100, config.TOUR_SYNC_LIMIT),
-  festivalSync: () => new FestivalSyncService(tourApi, tourism).run(),
+  festivalSync: () => new FestivalSyncService(tourApi, tourism).run(100, config.TOUR_SYNC_LIMIT),
   recalculateScores: () => recalculateSpotScores(tourism),
 };
 const app = createApp({ spots, users, checkIns, flags, reviews, requireAuth, requireInternal, operations });

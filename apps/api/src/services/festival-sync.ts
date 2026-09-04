@@ -8,16 +8,22 @@ type FestivalClient = Pick<TourApiClient, 'searchFestival' | 'detailCommon' | 'd
 
 export class FestivalSyncService {
   constructor(private readonly client: FestivalClient, private readonly repository: TourismRepository, private readonly now = () => new Date()) {}
-  async run(pageSize = 100) {
+  async run(pageSize = 100, sourceLimit?: number) {
+    if (sourceLimit !== undefined && (!Number.isSafeInteger(sourceLimit) || sourceLimit <= 0)) {
+      throw new Error('Festival sync source limit must be a positive integer.');
+    }
     const batchRunId = await this.repository.createBatchRun('FESTIVALS_SYNC');
-    let successCount = 0; let failureCount = 0; let pageNo = 1;
+    let successCount = 0; let failureCount = 0; let pageNo = 1; let selectedCount = 0;
     try {
       let hasNext: boolean;
       do {
         const today = this.now();
         const page = await this.client.searchFestival(addKstDays(today, -3).replaceAll('-', ''), pageNo, pageSize);
         hasNext = page.hasNext;
-        for (const list of page.items) {
+        const remaining = sourceLimit === undefined ? page.items.length : sourceLimit - selectedCount;
+        const selectedItems = sourceLimit === undefined ? page.items : page.items.slice(0, Math.max(0, remaining));
+        selectedCount += selectedItems.length;
+        for (const list of selectedItems) {
           try {
             const contentId = Number(list.contentid);
             const [common, intro, info, images] = await Promise.all([
@@ -34,6 +40,7 @@ export class FestivalSyncService {
             successCount += 1;
           } catch { failureCount += 1; }
         }
+        if (sourceLimit !== undefined && selectedCount >= sourceLimit) break;
         pageNo += 1;
       } while (hasNext);
       await this.repository.finishBatchRun(batchRunId, { status: 'SUCCESS', successCount, failureCount });
