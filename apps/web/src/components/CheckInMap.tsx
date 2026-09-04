@@ -7,7 +7,7 @@ import { calculateDistanceMeters, CHECK_IN_RADIUS_METERS } from '../features/che
 declare global { interface Window { kakao?: any; } }
 interface Coordinates { lat: number; lng: number; accuracy?: number | null; }
 
-export function CheckInMap({ position, spots = [], selectedSpot, onSelect }: { position: Coordinates | null; spots?: Spot[]; selectedSpot?: Spot | null; onSelect?: (spot: Spot) => void }) {
+export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMapClick }: { position: Coordinates | null; spots?: Spot[]; selectedSpot?: Spot | null; onSelect?: (spot: Spot) => void; onMapClick?: (lat: number, lng: number) => void }) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -41,6 +41,7 @@ export function CheckInMap({ position, spots = [], selectedSpot, onSelect }: { p
   useEffect(() => { if (state !== 'ready' || !window.kakao || !mapRef.current) return; spotMarkersRef.current.forEach((marker) => marker.setMap(null)); spotMarkersRef.current = spots.filter((spot) => spot.geometryType !== 'EXCLUDE' && Number.isFinite(spot.location.lat) && Number.isFinite(spot.location.lng)).map((spot) => { const distance = position ? calculateDistanceMeters(position.lat, position.lng, spot.location.lat, spot.location.lng) : Infinity; const available = spot.checkInEnabled === true && spot.checkInCompleted !== true && spot.reviewStatus !== 'PENDING' && distance <= (spot.checkInRadiusM ?? CHECK_IN_RADIUS_METERS); const completed = spot.checkInCompleted === true; const marker = new window.kakao.maps.Marker({ map: mapRef.current, position: new window.kakao.maps.LatLng(spot.location.lat, spot.location.lng), title: `${spot.title} ${completed ? '인증 완료' : available ? '현장 인증 가능' : '인증 불가'}` }); if (available) marker.setZIndex(2); if (completed) marker.setZIndex(3); window.kakao.maps.event.addListener(marker, 'click', () => onSelect?.(spot)); return marker; }); return () => spotMarkersRef.current.forEach((marker) => marker.setMap(null)); }, [spots, position, state, onSelect]);
   useEffect(() => { if (state === 'ready' && selectedSpot && window.kakao && mapRef.current) mapRef.current.panTo(new window.kakao.maps.LatLng(selectedSpot.location.lat, selectedSpot.location.lng)); }, [selectedSpot, state]);
 
+  useEffect(() => { if (state !== 'ready' || !onMapClick || !window.kakao || !mapRef.current) return; const handleClick = (mouseEvent: any) => { const latLng = mouseEvent.latLng; onMapClick(latLng.getLat(), latLng.getLng()); }; window.kakao.maps.event.addListener(mapRef.current, 'click', handleClick); return () => window.kakao?.maps?.event?.removeListener(mapRef.current, 'click', handleClick); }, [state, onMapClick]);
   const moveToCurrentLocation = () => {
     if (position && mapRef.current && window.kakao) { mapRef.current.setCenter(new window.kakao.maps.LatLng(position.lat, position.lng)); hasCenteredOnUser.current = true; return; }
     navigator.geolocation?.getCurrentPosition(() => undefined, () => undefined, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
