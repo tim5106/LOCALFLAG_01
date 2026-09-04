@@ -1,5 +1,5 @@
 import { AppShell } from './components/AppShell';
-import { CheckInExperiencePage } from './features/check-in/CheckInExperiencePage';
+import { CheckInPage } from './features/check-in/CheckInPage';
 import { DiscoveryPage } from './features/discovery/DiscoveryPage';
 import { MyFlagPage } from './features/my-flag/MyFlagPage';
 import { useUiStore } from './store/ui-store';
@@ -9,7 +9,7 @@ import { useState } from 'react';
 
 const pages = {
   discovery: DiscoveryPage,
-  'check-in': CheckInExperiencePage,
+  'check-in': CheckInPage,
   'my-flag': MyFlagPage,
 };
 

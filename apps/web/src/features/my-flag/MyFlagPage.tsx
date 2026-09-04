@@ -1,5 +1,4 @@
-import { Flag } from 'lucide-react';
-import { FlagSkinGrid } from '../../components/FlagSkinGrid';
+import { Flag, LockKeyhole, Palette, Trophy } from 'lucide-react';
 
 export function MyFlagPage() {
   return (
@@ -33,7 +32,17 @@ export function MyFlagPage() {
           <div><p>포인트로 꾸미기</p><h2>깃발 스킨</h2></div>
           <button type="button">상점 보기</button>
         </div>
-        <FlagSkinGrid />
+        <div className="skin-grid">
+          <button type="button" className="skin-card skin-card--active">
+            <Palette size={22} /><strong>Local Red</strong><small>장착 중</small>
+          </button>
+          <button type="button" className="skin-card">
+            <Trophy size={22} /><strong>Explorer</strong><small>800P</small>
+          </button>
+          <button type="button" className="skin-card skin-card--locked">
+            <LockKeyhole size={22} /><strong>Secret</strong><small>잠김</small>
+          </button>
+        </div>
       </section>
     </main>
   );
