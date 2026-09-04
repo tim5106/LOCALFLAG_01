@@ -91,5 +91,6 @@ export async function createCheckIn(spotId: number, position: PositionInput) {
 }
 
 export async function getMe() { return authorizedGet('/me'); }
+export async function getPointLedger() { return authorizedGet('/me/point-ledger'); }
 export async function getFlagSkins() { return authorizedGet('/flag-skins'); }
 async function authorizedGet(path: string) { const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { headers: { ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) } }); const body = await response.json() as unknown; if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody); return body; }
