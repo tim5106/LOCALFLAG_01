@@ -1,35 +1,36 @@
 import type { RequestHandler } from 'express';
-import { env } from '../config/env.js';
+import { TokenVerificationError, type TokenVerifier } from '../auth/token-verifier.js';
 import { HttpError } from '../lib/http-error.js';
-import { getSupabaseAuthClient } from '../lib/supabase.js';
+import type { UserReadRepository } from '../repositories/user-read-repository.js';
 
-export const requireAuth: RequestHandler = async (request, _response, next) => {
+export function createRequireAuth(
+  verifier: TokenVerifier,
+  users: Pick<UserReadRepository, 'findProfile'>,
+): RequestHandler {
+  return async (request, _response, next) => {
   try {
-    if (env.NODE_ENV !== 'production' && env.DEV_AUTH_BYPASS) {
-      request.userId = '00000000-0000-0000-0000-000000000001';
-      next();
-      return;
-    }
-
-    const accessToken = request.header('authorization')?.replace(/^Bearer\s+/i, '');
-    if (!accessToken) {
+    const authorization = request.header('authorization');
+    const match = authorization?.match(/^Bearer ([^\s,]+)$/i);
+    if (!match?.[1]) {
       throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요합니다.');
     }
-
-    const supabase = getSupabaseAuthClient();
-    if (!supabase) {
-      throw new HttpError(503, 'AUTH_NOT_CONFIGURED', '인증 서비스가 아직 설정되지 않았습니다.');
+    const identity = await verifier.verify(match[1]);
+    const profile = await users.findProfile(identity.userId);
+    if (!profile || profile.status === 'DELETED') {
+      throw new HttpError(401, 'PROFILE_NOT_FOUND', '사용자 프로필을 찾을 수 없습니다.');
     }
-
-    const { data, error } = await supabase.auth.getUser(accessToken);
-    if (error || !data.user) {
-      throw new HttpError(401, 'INVALID_TOKEN', '로그인 정보가 만료되었거나 올바르지 않습니다.');
+    if (profile.status === 'SUSPENDED') {
+      throw new HttpError(403, 'PROFILE_SUSPENDED', '정지된 사용자입니다.');
     }
-
-    request.userId = data.user.id;
+    request.userId = identity.userId;
     next();
   } catch (error) {
+    if (error instanceof TokenVerificationError) {
+      next(new HttpError(401, error.code, error.message));
+      return;
+    }
     next(error);
   }
-};
+  };
+}
 
