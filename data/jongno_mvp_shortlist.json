@@ -15,8 +15,15 @@
       "title": "국립기상박물관",
       "address": "서울특별시 종로구 송월동 1-1 국립기상박물관",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.569620, "lng": 126.966630 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.571416,
+        "lng": 126.966261
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/38/3456038_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -29,8 +36,15 @@
       "title": "김달진미술자료박물관",
       "address": "서울특별시 종로구 홍지문1길 4 (홍지동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.600106, "lng": 126.956664 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.600106,
+        "lng": 126.956664
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/70/3412170_image2_1.JPG",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -43,8 +57,15 @@
       "title": "딜쿠샤",
       "address": "서울특별시 종로구 사직로2길 17 (행촌동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060300" },
-      "location": { "lat": 37.573089, "lng": 126.963483 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060300"
+      },
+      "location": {
+        "lat": 37.573089,
+        "lng": 126.963483
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/61/3573161_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -57,8 +78,15 @@
       "title": "목인박물관 목석원",
       "address": "서울특별시 종로구 창의문로5길 46-1 (부암동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.589071, "lng": 126.963305 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.589071,
+        "lng": 126.963305
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/15/3540815_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -71,8 +99,15 @@
       "title": "삼성출판박물관",
       "address": "서울특별시 종로구 비봉길 2-2 (구기동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.608752, "lng": 126.957113 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.608752,
+        "lng": 126.957113
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/50/3540850_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -85,8 +120,15 @@
       "title": "상촌재",
       "address": "서울특별시 종로구 자하문로17길 12-11 (옥인동)",
       "contentTypeId": 12,
-      "category": { "cat1": "A02", "cat2": "A0203", "cat3": "A02030200" },
-      "location": { "lat": 37.581927, "lng": 126.969755 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0203",
+        "cat3": "A02030200"
+      },
+      "location": {
+        "lat": 37.581927,
+        "lng": 126.969755
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/04/3056504_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -99,8 +141,15 @@
       "title": "선바위(선암)",
       "address": "서울특별시 종로구 통일로18가길 26 (무악동)",
       "contentTypeId": 12,
-      "category": { "cat1": "A01", "cat2": "A0102", "cat3": "A01020200" },
-      "location": { "lat": 37.578997, "lng": 126.958970 },
+      "category": {
+        "cat1": "A01",
+        "cat2": "A0102",
+        "cat3": "A01020200"
+      },
+      "location": {
+        "lat": 37.578997,
+        "lng": 126.958970
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/55/3412155_image2_1.JPG",
       "geometryType": "AREA",
       "checkInEnabled": false,
@@ -113,8 +162,15 @@
       "title": "세계장신구박물관",
       "address": "서울특별시 종로구 북촌로5나길 2 (화동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.581030, "lng": 126.981820 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.581011,
+        "lng": 126.981762
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/63/3574663_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -127,8 +183,15 @@
       "title": "유금와당박물관",
       "address": "서울특별시 종로구 창의문로11가길 4 (부암동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.593767, "lng": 126.962677 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.593767,
+        "lng": 126.962677
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/81/3384781_image2_1.JPG",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -141,8 +204,15 @@
       "title": "윤동주 하숙집 터",
       "address": "서울특별시 종로구 옥인길 57",
       "contentTypeId": 12,
-      "category": { "cat1": "A02", "cat2": "A0201", "cat3": "A02010700" },
-      "location": { "lat": 37.581502, "lng": 126.965688 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0201",
+        "cat3": "A02010700"
+      },
+      "location": {
+        "lat": 37.581502,
+        "lng": 126.965688
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/61/3536361_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -155,8 +225,15 @@
       "title": "전태일기념관",
       "address": "서울특별시 종로구 청계천로 105 (관수동)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060200" },
-      "location": { "lat": 37.568521, "lng": 126.989314 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060200"
+      },
+      "location": {
+        "lat": 37.568373,
+        "lng": 126.989235
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/26/3412126_image2_1.JPG",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -169,8 +246,15 @@
       "title": "짚풀생활사박물관",
       "address": "서울특별시 종로구 성균관로4길 45 (명륜2가)",
       "contentTypeId": 14,
-      "category": { "cat1": "A02", "cat2": "A0206", "cat3": "A02060100" },
-      "location": { "lat": 37.584958, "lng": 126.999857 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0206",
+        "cat3": "A02060100"
+      },
+      "location": {
+        "lat": 37.584958,
+        "lng": 126.999857
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/26/3540826_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
@@ -183,8 +267,15 @@
       "title": "채석장 전망대",
       "address": "서울특별시 종로구 낙산5길 51 (창신동)",
       "contentTypeId": 12,
-      "category": { "cat1": "A02", "cat2": "A0205", "cat3": "A02050600" },
-      "location": { "lat": 37.578309, "lng": 127.011612 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0205",
+        "cat3": "A02050600"
+      },
+      "location": {
+        "lat": 37.578309,
+        "lng": 127.011612
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/03/3384903_image2_1.JPG",
       "geometryType": "AREA",
       "checkInEnabled": false,
@@ -197,8 +288,15 @@
       "title": "청룡사(서울)",
       "address": "서울특별시 종로구 동망산길 65 (숭인동)",
       "contentTypeId": 12,
-      "category": { "cat1": "A02", "cat2": "A0201", "cat3": "A02010800" },
-      "location": { "lat": 37.579778, "lng": 127.016864 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0201",
+        "cat3": "A02010800"
+      },
+      "location": {
+        "lat": 37.579778,
+        "lng": 127.016864
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/73/3530773_image2_1.jpg",
       "geometryType": "AREA",
       "checkInEnabled": false,
@@ -211,8 +309,15 @@
       "title": "필운동 홍건익 가옥",
       "address": "서울특별시 종로구 필운대로1길 14-4",
       "contentTypeId": 12,
-      "category": { "cat1": "A02", "cat2": "A0201", "cat3": "A02010400" },
-      "location": { "lat": 37.577972, "lng": 126.968897 },
+      "category": {
+        "cat1": "A02",
+        "cat2": "A0201",
+        "cat3": "A02010400"
+      },
+      "location": {
+        "lat": 37.577972,
+        "lng": 126.968897
+      },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/50/3535950_image2_1.jpg",
       "geometryType": "POINT",
       "checkInEnabled": true,
