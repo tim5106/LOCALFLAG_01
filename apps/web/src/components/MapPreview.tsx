@@ -22,6 +22,13 @@ export function MapPreview({ spots, selectedSpot, onSelect, onViewportChange }: 
   const [internalSelectedSpotId, setInternalSelectedSpotId] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<Spot['location'] | null>(null);
   const [locationState, setLocationState] = useState<'idle' | 'locating' | 'ready' | 'unavailable'>('idle');
+  const [copiedCoordinate, setCopiedCoordinate] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!copiedCoordinate) return;
+    const timer = setTimeout(() => setCopiedCoordinate(null), 3000);
+    return () => clearTimeout(timer);
+  }, [copiedCoordinate]);
 
   const selectedSpotId = selectedSpot === undefined ? internalSelectedSpotId : selectedSpot?.id ?? null;
   const nearbySpotIds = useMemo(
@@ -59,6 +66,14 @@ export function MapPreview({ spots, selectedSpot, onSelect, onViewportChange }: 
           onViewportChange?.({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
         };
         window.kakao.maps.event.addListener(map, 'idle', emitViewport);
+        window.kakao.maps.event.addListener(map, 'click', (mouseEvent: any) => {
+          const latLng = mouseEvent.latLng;
+          const lat = Number(latLng.getLat().toFixed(6));
+          const lng = Number(latLng.getLng().toFixed(6));
+          const snippet = `"location": { "lat": ${lat}, "lng": ${lng} }`;
+          navigator.clipboard?.writeText(snippet).catch(() => {});
+          setCopiedCoordinate(snippet);
+        });
         emitViewport();
       });
     };
@@ -168,6 +183,17 @@ export function MapPreview({ spots, selectedSpot, onSelect, onViewportChange }: 
       <button type="button" className="map-preview__locate" aria-label="현재 위치로 인증 가능 장소 찾기" onClick={handleLocate} disabled={locationState === 'locating'}>
         <Navigation size={19} />
       </button>
+      {copiedCoordinate && (
+        <div style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 99, background: '#0f172a', color: '#f8fafc', padding: '8px 16px',
+          borderRadius: 20, boxShadow: '0 4px 14px rgba(0,0,0,0.3)', fontSize: '0.82rem',
+          display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'none'
+        }}>
+          <span>🎯 <strong>출입구 복사됨:</strong></span>
+          <code style={{ background: '#1e293b', padding: '2px 6px', borderRadius: 4, color: '#38bdf8' }}>{copiedCoordinate}</code>
+        </div>
+      )}
     </section>
   );
 }

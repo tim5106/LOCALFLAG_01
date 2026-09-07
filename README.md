@@ -62,8 +62,14 @@ On Windows PowerShell, run:
 ```powershell
 Copy-Item apps/web/.env.example apps/web/.env
 Copy-Item apps/api/.env.example apps/api/.env
-
 ```
+
+> **Note for Windows PowerShell Users**:
+> If you encounter `PSSecurityException` or `running scripts is disabled on this system` when running `npm`, run:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+> or use Command Prompt (`cmd`) to execute npm commands.
 
 ### Development Server
 
