@@ -1,5 +1,5 @@
 export type SpotGrade = 'S' | 'A' | 'B' | 'C' | 'UNRATED';
-export type SpotGeometryType = 'POINT' | 'AREA';
+export type SpotGeometryType = 'POINT' | 'AREA' | 'EXCLUDE';
 
 export interface Spot {
   id: number;
@@ -11,11 +11,17 @@ export interface Spot {
   estimatedReward?: number;
   imageUrl: string | null;
   thumbnailUrl?: string | null;
-  status?: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  rewardEligible?: boolean;
+  seasonPin?: boolean;
+  infoOnly?: boolean;
   geometryType?: SpotGeometryType;
   checkInEnabled?: boolean;
+  checkInCompleted?: boolean;
   checkInRadiusM?: number;
   visited?: boolean;
+  reviewStatus?: string;
+  reviewNote?: string;
+  status?: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   location: {
     lat: number;
     lng: number;

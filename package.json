@@ -13,6 +13,7 @@
   "scripts": {
     "dev:web": "npm run dev --workspace @local-flag/web",
     "dev:api": "npm run dev --workspace @local-flag/api",
+    "sync:tour-spots": "npm run sync:tour-spots --workspace @local-flag/api",
     "build": "npm run build --workspace @local-flag/web && npm run build --workspace @local-flag/api",
     "typecheck": "npm run typecheck --workspace @local-flag/web && npm run typecheck --workspace @local-flag/api",
     "contracts:check": "node scripts/validate-openapi.mjs",
