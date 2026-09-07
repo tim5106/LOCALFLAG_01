@@ -42,8 +42,8 @@
         "cat3": "A02060100"
       },
       "location": {
-        "lat": 37.600106,
-        "lng": 126.956664
+        "lat": 37.600033,
+        "lng": 126.956657
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/70/3412170_image2_1.JPG",
       "geometryType": "POINT",
@@ -63,8 +63,8 @@
         "cat3": "A02060300"
       },
       "location": {
-        "lat": 37.573089,
-        "lng": 126.963483
+        "lat": 37.573019,
+        "lng": 126.963513
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/61/3573161_image2_1.jpg",
       "geometryType": "POINT",
@@ -84,8 +84,8 @@
         "cat3": "A02060100"
       },
       "location": {
-        "lat": 37.589071,
-        "lng": 126.963305
+        "lat": 37.588998,
+        "lng": 126.963259
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/15/3540815_image2_1.jpg",
       "geometryType": "POINT",
@@ -105,8 +105,8 @@
         "cat3": "A02060100"
       },
       "location": {
-        "lat": 37.608752,
-        "lng": 126.957113
+        "lat": 37.608746,
+        "lng": 126.95704
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/50/3540850_image2_1.jpg",
       "geometryType": "POINT",
@@ -126,8 +126,8 @@
         "cat3": "A02030200"
       },
       "location": {
-        "lat": 37.581927,
-        "lng": 126.969755
+        "lat": 37.581903,
+        "lng": 126.969585
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/04/3056504_image2_1.jpg",
       "geometryType": "POINT",
@@ -189,8 +189,8 @@
         "cat3": "A02060100"
       },
       "location": {
-        "lat": 37.593767,
-        "lng": 126.962677
+        "lat": 37.593672,
+        "lng": 126.962685
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/81/3384781_image2_1.JPG",
       "geometryType": "POINT",
@@ -210,8 +210,8 @@
         "cat3": "A02010700"
       },
       "location": {
-        "lat": 37.581502,
-        "lng": 126.965688
+        "lat": 37.58148,
+        "lng": 126.965722
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/61/3536361_image2_1.jpg",
       "geometryType": "POINT",
@@ -252,8 +252,8 @@
         "cat3": "A02060100"
       },
       "location": {
-        "lat": 37.584958,
-        "lng": 126.999857
+        "lat": 37.584918,
+        "lng": 126.999983
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/26/3540826_image2_1.jpg",
       "geometryType": "POINT",
@@ -294,8 +294,8 @@
         "cat3": "A02010800"
       },
       "location": {
-        "lat": 37.579778,
-        "lng": 127.016864
+        "lat": 37.579995,
+        "lng": 127.016707
       },
       "imageUrl": "http://tong.visitkorea.or.kr/cms/resource/73/3530773_image2_1.jpg",
       "geometryType": "AREA",
