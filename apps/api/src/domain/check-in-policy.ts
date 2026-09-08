@@ -28,8 +28,11 @@ export function positionReasons(input: {
   return reasons;
 }
 
-export function isWithinCheckInRadius(distanceM: number): boolean {
-  return distanceM <= CHECK_IN_POLICY.allowedRadiusM;
+export function isWithinCheckInRadius(
+  distanceM: number,
+  allowedRadiusM: number = CHECK_IN_POLICY.allowedRadiusM,
+): boolean {
+  return distanceM <= allowedRadiusM;
 }
 
 export function isCooldownComplete(previousCreatedAt: Date | null, now: Date): boolean {

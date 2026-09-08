@@ -81,8 +81,10 @@ export class PostgresCheckInRepository implements CheckInRepository {
       const spotResult = await client.query<{
         content_type_id: number; status: string; is_declining_area: boolean;
         area_code: number | null; quiet_weight: number; distance_m: number;
+        check_in_enabled: boolean; check_in_radius_m: number;
       }>(
         `select s.content_type_id, s.status, s.is_declining_area, s.area_code,
+           s.check_in_enabled, s.check_in_radius_m,
            sc.quiet_weight::float8 as quiet_weight,
            extensions.st_distance(
              s.location,
@@ -95,15 +97,18 @@ export class PostgresCheckInRepository implements CheckInRepository {
       );
       const spot = spotResult.rows[0];
       if (!spot) throw new CheckInRuleError(404, 'SPOT_NOT_FOUND', '인증 가능한 장소를 찾을 수 없습니다.');
-      if (spot.status !== 'ACTIVE') throw new CheckInRuleError(422, 'SPOT_NOT_ELIGIBLE', '현재 체크인할 수 없는 장소입니다.');
+      if (!spot.check_in_enabled || spot.status !== 'ACTIVE') {
+        throw new CheckInRuleError(422, 'SPOT_NOT_ELIGIBLE', '현재 체크인할 수 없는 장소입니다.');
+      }
       if (!CHECK_IN_POLICY.eligibleContentTypeIds.includes(Number(spot.content_type_id))) {
         throw new CheckInRuleError(422, 'SPOT_NOT_ELIGIBLE', '현재 체크인 대상이 아닌 장소 유형입니다.');
       }
       const distanceM = Number(spot.distance_m);
-      if (!isWithinCheckInRadius(distanceM)) {
+      const allowedRadiusM = Number(spot.check_in_radius_m);
+      if (!isWithinCheckInRadius(distanceM, allowedRadiusM)) {
         throw new CheckInRuleError(422, 'OUT_OF_RANGE', '체크인 가능 거리 밖에 있습니다.', {
           distanceM: Math.round(distanceM * 10) / 10,
-          allowedRadiusM: CHECK_IN_POLICY.allowedRadiusM,
+          allowedRadiusM,
         });
       }
 

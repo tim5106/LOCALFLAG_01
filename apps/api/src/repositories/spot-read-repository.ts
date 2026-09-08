@@ -47,6 +47,9 @@ interface SpotRow {
   status: 'SCHEDULED' | 'ACTIVE';
   area_code: number | null;
   quiet_weight: number;
+  geometry_type: 'POINT' | 'AREA';
+  check_in_enabled: boolean;
+  check_in_radius_m: number;
 }
 
 function mapSpot(row: SpotRow): SpotReadModel {
@@ -63,6 +66,9 @@ function mapSpot(row: SpotRow): SpotReadModel {
     status: row.status,
     areaCode: row.area_code === null ? null : Number(row.area_code),
     quietWeight: Number(row.quiet_weight),
+    geometryType: row.geometry_type,
+    checkInEnabled: row.check_in_enabled,
+    checkInRadiusM: Number(row.check_in_radius_m),
   };
 }
 
@@ -70,7 +76,8 @@ const SPOT_COLUMNS = `s.content_id::float8 as id, s.title, s.address, s.content_
     extensions.st_y(s.location::extensions.geometry)::float8 as lat,
     extensions.st_x(s.location::extensions.geometry)::float8 as lng,
     sc.grade, s.is_declining_area, s.image_url, s.status, s.area_code,
-    sc.quiet_weight::float8 as quiet_weight`;
+    sc.quiet_weight::float8 as quiet_weight,
+    s.geometry_type, s.check_in_enabled, s.check_in_radius_m`;
 const SPOT_FROM = `from public.tour_spots s
   join public.spot_scores sc on sc.content_id = s.content_id`;
 
@@ -136,7 +143,8 @@ export class PostgresSpotReadRepository implements SpotReadRepository {
         extensions.st_y(s.location::extensions.geometry)::float8 as lat,
         extensions.st_x(s.location::extensions.geometry)::float8 as lng,
         sc.grade, s.is_declining_area, s.image_url, s.status, s.area_code,
-        sc.quiet_weight::float8 as quiet_weight
+        sc.quiet_weight::float8 as quiet_weight,
+        s.geometry_type, s.check_in_enabled, s.check_in_radius_m
        from public.tour_spots s
        join public.spot_scores sc on sc.content_id = s.content_id
        cross join lateral (
