@@ -122,6 +122,17 @@ For development smoke tests only, set `TOUR_SYNC_LIMIT` to a positive integer
 to cap selected tourism or festival source spots. Leave it empty for the
 normal, unlimited synchronization behavior.
 
+After applying migrations, apply the manually reviewed Jongno coordinates and
+check-in policy from `data/jongno_mvp_shortlist.json` with:
+
+```bash
+npm run seed:jongno-mvp
+```
+
+The command is safe to rerun. Existing TourAPI metadata, scores, check-ins, and
+history are preserved; only the reviewed location and check-in policy are
+reapplied.
+
 ### Internal operations
 
 The API requires `INTERNAL_CRON_SECRET` (at least 16 characters) and the

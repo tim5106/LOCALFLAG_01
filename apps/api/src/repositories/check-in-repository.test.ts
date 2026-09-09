@@ -18,6 +18,15 @@ function resultRow() {
     reward_policy_version: 'reward-v1', reward_factors: { base: 100, areaWeight: 1.5, quietWeight: 1 } };
 }
 
+function eligibleSpotRow(overrides: Record<string, unknown> = {}) {
+  return {
+    content_type_id: 12, status: 'ACTIVE', is_declining_area: false,
+    area_code: 1, quiet_weight: 1, distance_m: 20,
+    check_in_enabled: true, check_in_radius_m: 100,
+    ...overrides,
+  };
+}
+
 function fakePool(handler: (sql: string, values?: unknown[]) => { rows: unknown[] } | Promise<{ rows: unknown[] }>) {
   const query = vi.fn(async (sql: string, values?: unknown[]) => handler(sql, values));
   const client = { query, release: vi.fn() } as unknown as PoolClient;
@@ -30,8 +39,7 @@ describe('PostgresCheckInRepository transaction engine', () => {
     const { pool, query } = fakePool((sql) => {
       if (sql.includes('select point_balance')) return { rows: [{ point_balance: 500, status: 'ACTIVE' }] };
       if (sql.includes('idempotency_key = $2')) return { rows: [] };
-      if (sql.includes('from public.tour_spots')) return { rows: [{ content_type_id: 12, status: 'ACTIVE',
-        is_declining_area: false, area_code: 32, quiet_weight: 1, distance_m: 100 }] };
+      if (sql.includes('from public.tour_spots')) return { rows: [eligibleSpotRow({ area_code: 32, distance_m: 100 })] };
       if (sql.includes('movement_distance_m')) return { rows: [] };
       if (sql.includes(') as rewarded')) return { rows: [{ rewarded: false }] };
       if (sql.includes('rewarded_count')) return { rows: [{ rewarded_count: 9, rewarded_points: 4_800 }] };
@@ -72,8 +80,7 @@ describe('PostgresCheckInRepository transaction engine', () => {
     const { pool, query } = fakePool((sql) => {
       if (sql.includes('select point_balance')) return { rows: [{ point_balance: 500, status: 'ACTIVE' }] };
       if (sql.includes('idempotency_key = $2')) return { rows: [] };
-      if (sql.includes('from public.tour_spots')) return { rows: [{ content_type_id: 12, status: 'ACTIVE',
-        is_declining_area: true, area_code: 32, quiet_weight: 1, distance_m: 20 }] };
+      if (sql.includes('from public.tour_spots')) return { rows: [eligibleSpotRow({ is_declining_area: true, area_code: 32 })] };
       if (sql.includes('movement_distance_m')) return { rows: [{ created_at: new Date(now.valueOf() - 600_000), movement_distance_m: 30_000 }] };
       if (sql.includes('insert into public.check_ins')) return { rows: [{ id: 'review-1' }] };
       return { rows: [] };
@@ -87,8 +94,7 @@ describe('PostgresCheckInRepository transaction engine', () => {
     const { pool, query } = fakePool((sql) => {
       if (sql.includes('select point_balance')) return { rows: [{ point_balance: 500, status: 'ACTIVE' }] };
       if (sql.includes('idempotency_key = $2')) return { rows: [] };
-      if (sql.includes('from public.tour_spots')) return { rows: [{ content_type_id: 12, status: 'ACTIVE',
-        is_declining_area: false, area_code: 1, quiet_weight: 1, distance_m: 20 }] };
+      if (sql.includes('from public.tour_spots')) return { rows: [eligibleSpotRow()] };
       if (sql.includes('movement_distance_m')) return { rows: [] };
       if (sql.includes(') as rewarded')) return { rows: [{ rewarded: true }] };
       if (sql.includes('insert into public.check_ins')) return { rows: [{ id: 'revisit-1' }] };
@@ -103,8 +109,7 @@ describe('PostgresCheckInRepository transaction engine', () => {
     const { pool, query } = fakePool((sql, values) => {
       if (sql.includes('select point_balance')) return { rows: [{ point_balance: 4_900, status: 'ACTIVE' }] };
       if (sql.includes('idempotency_key = $2')) return { rows: [] };
-      if (sql.includes('from public.tour_spots')) return { rows: [{ content_type_id: 12, status: 'ACTIVE',
-        is_declining_area: false, area_code: 1, quiet_weight: 1, distance_m: 20 }] };
+      if (sql.includes('from public.tour_spots')) return { rows: [eligibleSpotRow()] };
       if (sql.includes('movement_distance_m')) return { rows: [] };
       if (sql.includes(') as rewarded')) return { rows: [{ rewarded: false }] };
       if (sql.includes('rewarded_count')) {
@@ -123,8 +128,7 @@ describe('PostgresCheckInRepository transaction engine', () => {
     const { pool, query } = fakePool((sql) => {
       if (sql.includes('select point_balance')) return { rows: [{ point_balance: 0, status: 'ACTIVE' }] };
       if (sql.includes('idempotency_key = $2')) return { rows: [] };
-      if (sql.includes('from public.tour_spots')) return { rows: [{ content_type_id: 12, status: 'ACTIVE',
-        is_declining_area: false, area_code: 1, quiet_weight: 1, distance_m: 20 }] };
+      if (sql.includes('from public.tour_spots')) return { rows: [eligibleSpotRow()] };
       if (sql.includes('movement_distance_m')) return { rows: [] };
       if (sql.includes(') as rewarded')) return { rows: [{ rewarded: false }] };
       if (sql.includes('rewarded_count')) return { rows: [{ rewarded_count: 0, rewarded_points: 0 }] };
@@ -135,6 +139,38 @@ describe('PostgresCheckInRepository transaction engine', () => {
     });
     await expect(new PostgresCheckInRepository(pool).create(command)).rejects.toThrow('ledger unavailable');
     expect(query.mock.calls.at(-1)?.[0]).toBe('rollback');
+  });
+
+  it('rejects disabled reviewed spots before creating a check-in', async () => {
+    const { pool, query } = fakePool((sql) => {
+      if (sql.includes('select point_balance')) return { rows: [{ point_balance: 0, status: 'ACTIVE' }] };
+      if (sql.includes('idempotency_key = $2')) return { rows: [] };
+      if (sql.includes('from public.tour_spots')) {
+        return { rows: [eligibleSpotRow({ check_in_enabled: false, distance_m: 0 })] };
+      }
+      return { rows: [] };
+    });
+
+    await expect(new PostgresCheckInRepository(pool).create(command))
+      .rejects.toMatchObject({ code: 'SPOT_NOT_ELIGIBLE' });
+    expect(query.mock.calls.some((call) => String(call[0]).includes('insert into public.check_ins'))).toBe(false);
+  });
+
+  it('uses the stored spot radius for the actual check-in decision', async () => {
+    const { pool, query } = fakePool((sql) => {
+      if (sql.includes('select point_balance')) return { rows: [{ point_balance: 0, status: 'ACTIVE' }] };
+      if (sql.includes('idempotency_key = $2')) return { rows: [] };
+      if (sql.includes('from public.tour_spots')) {
+        return { rows: [eligibleSpotRow({ check_in_radius_m: 60, distance_m: 70 })] };
+      }
+      return { rows: [] };
+    });
+
+    await expect(new PostgresCheckInRepository(pool).create(command)).rejects.toMatchObject({
+      code: 'OUT_OF_RANGE', details: { distanceM: 70, allowedRadiusM: 60 },
+    });
+    expect(String(query.mock.calls.find((call) => String(call[0]).includes('from public.tour_spots'))?.[0]))
+      .toContain('s.check_in_radius_m');
   });
 
   it('keeps database-level race protections and row locking in the schema/transaction', () => {
