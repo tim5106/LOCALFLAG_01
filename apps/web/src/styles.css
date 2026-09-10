@@ -235,6 +235,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .kakao-spot-marker--check-in { background: #d54d35; box-shadow: 0 0 0 4px rgba(213,77,53,.18), 0 5px 10px rgba(20,58,49,.28); }
 .kakao-spot-marker--completed { background: #6f4cc4; }
 .kakao-spot-marker--selected { outline: 4px solid #f0b847; outline-offset: 3px; }
+.kakao-spot-marker > span { color: #fff; font-size: 11px; font-weight: 800; }
 
 @media (min-width: 600px) {
   .app-shell { padding: 28px; }
