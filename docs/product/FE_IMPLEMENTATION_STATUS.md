@@ -27,7 +27,7 @@ This document records the frontend status against the week 1 and week 2 MVP requ
 - [ ] Verify Kakao allowed domains and production-key behavior outside localhost. Missing keys and SDK load failures now use the existing map fallback UI; domain registration still requires external verification.
 - [ ] Verify real TourAPI spot IDs through the complete precheck/check-in flow. FE payload mapping and SUCCESS/REVIEW/404/501 handling are implemented; authenticated live verification remains pending.
 - [x] Connect My Flag profile, point-ledger, and flag-skin catalog screens to the existing APIs with loading, empty, and auth/error states.
-- [ ] Add automated coverage for source display, image failures, area rules, and check-in edge cases.
+- [x] Add automated coverage for source/fallback API metadata, coordinate and geometry rules, image fallback component usage, and Check-in API edge cases.
 
 ## External verification required
 
