@@ -15,7 +15,7 @@ export function MapPreview({ spots, selectedSpot, onSelect, onViewportChange }: 
     const script = existing ?? document.createElement('script'); script.id = 'kakao-maps-sdk'; script.async = true; script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(webEnv.kakaoMapAppKey)}&autoload=false`;
     if (!existing) document.head.appendChild(script);
     const initialize = () => { if (!window.kakao || !mapElement.current) { setMapState('error'); return; } window.kakao.maps.load(() => { if (!window.kakao || !mapElement.current) return; const map = new window.kakao.maps.Map(mapElement.current, { center: new window.kakao.maps.LatLng(37.58, 126.98), level: 5 }); mapRef.current = map; setMapState('ready'); const emitViewport = () => { const bounds = map.getBounds(); const sw = bounds.getSouthWest(); const ne = bounds.getNorthEast(); onViewportChange?.({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() }); }; window.kakao.maps.event.addListener(map, 'idle', emitViewport); emitViewport(); }); };
-    script.addEventListener('load', initialize, { once: true }); if (window.kakao) initialize(); return () => script.removeEventListener('load', initialize);
+    script.addEventListener('load', initialize, { once: true }); script.addEventListener('error', () => setMapState('error'), { once: true }); if (window.kakao) initialize(); return () => script.removeEventListener('load', initialize);
   }, [onViewportChange]);
   useEffect(() => {
     if (mapState !== 'ready' || !window.kakao || !mapRef.current) return;

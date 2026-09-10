@@ -23,8 +23,8 @@ This document records the frontend status against the week 1 and week 2 MVP requ
 - [x] Group spots sharing identical coordinates into one selectable marker; repeated clicks cycle through the grouped spots.
 - [x] Exclude `EXCLUDE` spots from Discovery and Check-in selection; keep `AREA` spots locked for authentication.
 - [x] Use `checkInRadiusM` when provided, otherwise use the shared 30m default consistently in status calculations and copy.
-- [ ] Perform real-device HTTPS tests for location permission, denied, inaccurate, and unsupported states.
-- [ ] Verify Kakao allowed domains and production-key behavior outside localhost.
+- [ ] Perform real-device HTTPS tests for location permission, denied, inaccurate, and unsupported states. Code-level error messaging is implemented; physical-device verification remains pending.
+- [ ] Verify Kakao allowed domains and production-key behavior outside localhost. Missing keys and SDK load failures now use the existing map fallback UI; domain registration still requires external verification.
 - [ ] Verify real TourAPI spot IDs through the complete precheck/check-in flow.
 - [ ] Verify My Flag and point-ledger screens against the real API.
 - [ ] Add automated coverage for source display, image failures, area rules, and check-in edge cases.
