@@ -29,7 +29,7 @@ export function DiscoveryPage() {
       ...mapViewport ?? {},
     }, signal),
   });
-  const spots = spotsQuery.data?.data ?? [];
+  const spots = (spotsQuery.data?.data ?? []).filter((spot) => spot.geometryType !== 'EXCLUDE');
   if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,7 +48,7 @@ export function DiscoveryPage() {
   }, [setMapViewport]);
 
   const source = spotsQuery.data?.meta.source;
-  const mapSpots = Array.from(new globalThis.Map([...spots, ...shortlistData.data].map((spot) => [spot.id, spot])).values()) as Spot[];
+  const mapSpots = Array.from(new globalThis.Map([...spots, ...shortlistData.data].map((spot) => [spot.id, spot])).values()).filter((spot) => (spot as Spot).geometryType !== 'EXCLUDE') as Spot[];
   return (
     <main className="page discovery-page">
       <header className="hero">
