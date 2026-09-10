@@ -22,7 +22,7 @@ This document records the frontend status against the week 1 and week 2 MVP requ
 - [x] Handle empty, broken, and `http` image URLs with a shared fallback component; real mobile verification remains pending.
 - [x] Group spots sharing identical coordinates into one selectable marker; repeated clicks cycle through the grouped spots.
 - [x] Exclude `EXCLUDE` spots from Discovery and Check-in selection; keep `AREA` spots locked for authentication.
-- [ ] Confirm the final check-in radius policy and apply it consistently to all copy and screens.
+- [x] Use `checkInRadiusM` when provided, otherwise use the shared 30m default consistently in status calculations and copy.
 - [ ] Perform real-device HTTPS tests for location permission, denied, inaccurate, and unsupported states.
 - [ ] Verify Kakao allowed domains and production-key behavior outside localhost.
 - [ ] Verify real TourAPI spot IDs through the complete precheck/check-in flow.
