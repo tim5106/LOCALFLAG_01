@@ -25,8 +25,8 @@ This document records the frontend status against the week 1 and week 2 MVP requ
 - [x] Use `checkInRadiusM` when provided, otherwise use the shared 30m default consistently in status calculations and copy.
 - [ ] Perform real-device HTTPS tests for location permission, denied, inaccurate, and unsupported states. Code-level error messaging is implemented; physical-device verification remains pending.
 - [ ] Verify Kakao allowed domains and production-key behavior outside localhost. Missing keys and SDK load failures now use the existing map fallback UI; domain registration still requires external verification.
-- [ ] Verify real TourAPI spot IDs through the complete precheck/check-in flow.
-- [ ] Verify My Flag and point-ledger screens against the real API.
+- [ ] Verify real TourAPI spot IDs through the complete precheck/check-in flow. FE payload mapping and SUCCESS/REVIEW/404/501 handling are implemented; authenticated live verification remains pending.
+- [x] Connect My Flag profile, point-ledger, and flag-skin catalog screens to the existing APIs with loading, empty, and auth/error states.
 - [ ] Add automated coverage for source display, image failures, area rules, and check-in edge cases.
 
 ## External verification required
