@@ -16,17 +16,18 @@ export class CheckInService {
     void userId;
     const spot = await this.spots.findVisibleById(spotId);
     if (!spot) throw new CheckInRuleError(404, 'SPOT_NOT_FOUND', '인증 가능한 장소를 찾을 수 없습니다.');
-    if (spot.status !== 'ACTIVE' || !CHECK_IN_POLICY.eligibleContentTypeIds.includes(spot.contentTypeId)) {
+    if (!spot.checkInEnabled || spot.status !== 'ACTIVE'
+      || !CHECK_IN_POLICY.eligibleContentTypeIds.includes(spot.contentTypeId)) {
       throw new CheckInRuleError(422, 'SPOT_NOT_ELIGIBLE', '현재 체크인할 수 없는 장소입니다.');
     }
     const distanceM = distanceInMeters(position, { lat: spot.lat, lng: spot.lng });
     const reasons: string[] = [...positionReasons({ ...position, now: this.now() })];
-    if (!isWithinCheckInRadius(distanceM)) reasons.push('OUT_OF_RANGE');
+    if (!isWithinCheckInRadius(distanceM, spot.checkInRadiusM)) reasons.push('OUT_OF_RANGE');
     return {
       eligible: reasons.length === 0,
       spotId,
       distanceM: Math.round(distanceM * 10) / 10,
-      allowedRadiusM: CHECK_IN_POLICY.allowedRadiusM,
+      allowedRadiusM: spot.checkInRadiusM,
       accuracyM: position.accuracyM,
       reasons,
       estimatedReward: reasons.length === 0 ? estimateReward(spot).points : 0,

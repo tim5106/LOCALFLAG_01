@@ -1,8 +1,10 @@
 export type SpotGrade = 'S' | 'A' | 'B' | 'C' | 'UNRATED';
 export type SpotGeometryType = 'POINT' | 'AREA' | 'EXCLUDE';
+export type CheckInStatus = 'LOCKED' | 'AVAILABLE' | 'PENDING' | 'COMPLETED';
 
 export interface Spot {
   id: number;
+  name?: string;
   title: string;
   address: string;
   contentTypeId: number;
@@ -21,7 +23,7 @@ export interface Spot {
   visited?: boolean;
   reviewStatus?: string;
   reviewNote?: string;
-  status?: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  status: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   location: {
     lat: number;
     lng: number;

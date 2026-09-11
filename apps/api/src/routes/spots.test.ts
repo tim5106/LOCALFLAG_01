@@ -14,6 +14,7 @@ const fixture: SpotReadModel = {
   id: 10, title: '숨은 숲', address: '강원도 고성군', contentTypeId: 12,
   lat: 38.1, lng: 128.2, grade: 'A', isDecliningArea: true,
   imageUrl: null, status: 'ACTIVE', areaCode: 32, quietWeight: 1,
+  geometryType: 'POINT', checkInEnabled: true, checkInRadiusM: 100,
 };
 const spots: SpotReadRepository = {
   list: vi.fn(), findVisibleById: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(),
@@ -46,7 +47,10 @@ describe('spot routes', () => {
       minLat: 37, minLng: 127, maxLat: 39, maxLng: 129, contentTypeIds: [12, 14],
       grades: ['S', 'A'], decliningArea: true, q: '숲', areaCode: 32, sigunguCode: 1, limit: 11,
     }));
-    expect(response.body.data[0]).toMatchObject({ id: 10, estimatedReward: 250 });
+    expect(response.body.data[0]).toMatchObject({
+      id: 10, estimatedReward: 250, geometryType: 'POINT',
+      checkInEnabled: true, checkInRadiusM: 100,
+    });
   });
 
   it.each([

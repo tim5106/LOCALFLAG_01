@@ -570,7 +570,7 @@ components:
         eligible: { type: boolean }
         spotId: { type: integer, format: int64 }
         distanceM: { type: number }
-        allowedRadiusM: { type: number, const: 100 }
+        allowedRadiusM: { type: integer, minimum: 1 }
         accuracyM: { type: number }
         reasons:
           type: array
@@ -618,6 +618,9 @@ components:
         estimatedReward: { type: integer, minimum: 0 }
         imageUrl: { type: [string, 'null'], format: uri }
         status: { type: string, enum: [SCHEDULED, ACTIVE, INACTIVE, EXPIRED] }
+        geometryType: { type: string, enum: [POINT, AREA] }
+        checkInEnabled: { type: boolean }
+        checkInRadiusM: { type: integer, minimum: 1 }
         location: { $ref: '#/components/schemas/SimpleLocation' }
 
     SimpleLocation:

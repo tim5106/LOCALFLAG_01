@@ -1,6 +1,7 @@
 import { Navigation } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { webEnv } from '../config/env';
+import { groupSpotsByLocation } from '../lib/map-preview-spots';
 import { getMapSpotState, getMapSpotStateLabel, getNearbySpotIds } from '../lib/map-spot-state';
 import type { Spot } from '../types/spot';
 import './map-preview.css';
@@ -12,7 +13,7 @@ export function MapPreview({ spots, selectedSpot, onSelect, onViewportChange }: 
   const mapElement = useRef<HTMLDivElement>(null); const mapRef = useRef<any>(null); const markersRef = useRef<any[]>([]);
   const [mapState, setMapState] = useState<'fallback' | 'loading' | 'ready' | 'error'>(webEnv.kakaoMapAppKey ? 'loading' : 'fallback');
   const [userLocation, setUserLocation] = useState<Spot['location'] | null>(null);
-  const [locationState, setLocationState] = useState<'idle' | 'locating' | 'ready' | 'unavailable'>('idle');
+  const [, setLocationState] = useState<'idle' | 'locating' | 'ready' | 'unavailable'>('idle');
   const nearbySpotIds = useMemo(() => userLocation ? getNearbySpotIds(spots, userLocation) : new Set<number>(), [spots, userLocation]);
   useEffect(() => {
     if (!webEnv.kakaoMapAppKey || !mapElement.current) return;
@@ -20,22 +21,29 @@ export function MapPreview({ spots, selectedSpot, onSelect, onViewportChange }: 
     const script = existing ?? document.createElement('script'); script.id = 'kakao-maps-sdk'; script.async = true; script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(webEnv.kakaoMapAppKey)}&autoload=false`;
     if (!existing) document.head.appendChild(script);
     const initialize = () => { if (!window.kakao || !mapElement.current) { setMapState('error'); return; } window.kakao.maps.load(() => { if (!window.kakao || !mapElement.current) return; const map = new window.kakao.maps.Map(mapElement.current, { center: new window.kakao.maps.LatLng(37.58, 126.98), level: 5 }); mapRef.current = map; setMapState('ready'); const emitViewport = () => { const bounds = map.getBounds(); const sw = bounds.getSouthWest(); const ne = bounds.getNorthEast(); onViewportChange?.({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() }); }; window.kakao.maps.event.addListener(map, 'idle', emitViewport); emitViewport(); }); };
-    script.addEventListener('load', initialize, { once: true }); if (window.kakao) initialize(); return () => script.removeEventListener('load', initialize);
+    const handleError = () => setMapState('error');
+    script.addEventListener('load', initialize, { once: true });
+    script.addEventListener('error', handleError, { once: true });
+    if (window.kakao) initialize();
+    return () => { script.removeEventListener('load', initialize); script.removeEventListener('error', handleError); };
   }, [onViewportChange]);
   useEffect(() => {
     if (mapState !== 'ready' || !window.kakao || !mapRef.current) return;
     markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = spots.filter((spot) => Number.isFinite(spot.location.lat) && Number.isFinite(spot.location.lng)).map((spot) => {
-      const spotState = getMapSpotState({ spot, selectedSpotId: selectedSpot?.id, nearbySpotIds });
-      const state = spot.checkInCompleted || spotState.visited ? 'completed' : spotState.checkInAvailable ? 'check-in' : spot.reviewStatus ? 'pending' : 'default';
+    markersRef.current = groupSpotsByLocation(spots).map((group) => {
+      let selectedIndex = 0;
+      const representative = group[0];
+      if (!representative) return null;
+      const representativeState = getMapSpotState({ spot: representative, selectedSpotId: selectedSpot?.id, nearbySpotIds });
+      const state = representative.checkInCompleted || representativeState.visited ? 'completed' : representativeState.checkInAvailable ? 'check-in' : representative.reviewStatus ? 'pending' : 'default';
       const content = document.createElement('button');
       content.type = 'button';
-      content.className = `kakao-spot-marker kakao-spot-marker--${state}${spotState.selected ? ' kakao-spot-marker--selected' : ''}`;
-      content.setAttribute('aria-label', `${spot.title}, ${getMapSpotStateLabel(spotState)}`);
-      content.innerHTML = '<span></span>';
-      content.addEventListener('click', () => onSelect?.(spot));
-      return new window.kakao.maps.CustomOverlay({ map: mapRef.current, position: new window.kakao.maps.LatLng(spot.location.lat, spot.location.lng), content, yAnchor: 1 });
-    });
+      content.className = `kakao-spot-marker kakao-spot-marker--${state}${group.some((spot) => spot.id === selectedSpot?.id) ? ' kakao-spot-marker--selected' : ''}`;
+      content.setAttribute('aria-label', group.length > 1 ? `${group.length}개 장소: ${group.map((spot) => spot.title).join(', ')}` : `${representative.title}, ${getMapSpotStateLabel(representativeState)}`);
+      content.innerHTML = group.length > 1 ? `<span>${group.length}</span>` : '<span></span>';
+      content.addEventListener('click', () => { onSelect?.(group[selectedIndex] ?? representative); selectedIndex = (selectedIndex + 1) % group.length; });
+      return new window.kakao.maps.CustomOverlay({ map: mapRef.current, position: new window.kakao.maps.LatLng(representative.location.lat, representative.location.lng), content, yAnchor: 1 });
+    }).filter((marker): marker is any => marker !== null);
     return () => markersRef.current.forEach((marker) => marker.setMap(null));
   }, [mapState, nearbySpotIds, onSelect, selectedSpot, spots]);
   const moveToCurrentLocation = () => {

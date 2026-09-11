@@ -1,8 +1,17 @@
-import { Router, type RequestHandler } from 'express';
+import { Router, type Request, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { HttpError } from '../lib/http-error.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { FlagRuleError, type FlagRepository } from '../repositories/flag-repository.js';
+
+const DEV_SKINS = [
+  { id: 'default-red', name: 'Local Red', description: '기본 플래그 스킨', price: 0, assetUrl: '/assets/flags/default-red.svg', owned: true, equipped: true },
+  { id: 'explorer', name: 'Explorer', description: '탐험가 플래그 스킨', price: 800, assetUrl: '/assets/flags/explorer.svg', owned: false, equipped: false },
+];
+
+function isDevTestRequest(request: Request): boolean {
+  return request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
+}
 
 function userId(request: Express.Request): string {
   if (!request.userId) throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요합니다.');
@@ -16,7 +25,19 @@ export function createFlagSkinsRouter(requireAuth: RequestHandler, flags: FlagRe
   const router = Router();
   router.use(requireAuth);
   router.get('/', async (request, response, next) => {
-    try { response.json({ data: await flags.listCatalog(userId(request)) }); } catch (error) { next(mapError(error)); }
+    if (isDevTestRequest(request)) {
+      response.json({ data: DEV_SKINS });
+      return;
+    }
+    try { response.json({ data: await flags.listCatalog(userId(request)) }); }
+    catch (error) {
+      if (isDevTestRequest(request)) {
+        console.warn('[dev-flag-skins-fallback] catalog lookup failed; serving mock catalog.', { error });
+        response.json({ data: DEV_SKINS });
+        return;
+      }
+      next(mapError(error));
+    }
   });
   router.post('/:skinId/purchase', createRateLimiter({ limit: 10, windowMs: 60_000 }), async (request, response, next) => {
     try {

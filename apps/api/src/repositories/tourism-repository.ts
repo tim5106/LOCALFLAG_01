@@ -76,7 +76,10 @@ export class PostgresTourismRepository implements TourismRepository {
            content_type_id = excluded.content_type_id,
            title = excluded.title,
            address = excluded.address,
-           location = excluded.location,
+           location = case
+             when tour_spots.reviewed_override then tour_spots.location
+             else excluded.location
+           end,
            area_code = excluded.area_code,
            sigungu_code = excluded.sigungu_code,
            is_declining_area = excluded.is_declining_area,

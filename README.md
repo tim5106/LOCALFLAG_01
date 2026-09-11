@@ -62,8 +62,14 @@ On Windows PowerShell, run:
 ```powershell
 Copy-Item apps/web/.env.example apps/web/.env
 Copy-Item apps/api/.env.example apps/api/.env
-
 ```
+
+> **Note for Windows PowerShell Users**:
+> If you encounter `PSSecurityException` or `running scripts is disabled on this system` when running `npm`, run:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+> or use Command Prompt (`cmd`) to execute npm commands.
 
 ### Development Server
 
@@ -115,6 +121,17 @@ unusable coordinates, and transactionally upserts `tour_spots` with its
 For development smoke tests only, set `TOUR_SYNC_LIMIT` to a positive integer
 to cap selected tourism or festival source spots. Leave it empty for the
 normal, unlimited synchronization behavior.
+
+After applying migrations, apply the manually reviewed Jongno coordinates and
+check-in policy from `data/jongno_mvp_shortlist.json` with:
+
+```bash
+npm run seed:jongno-mvp
+```
+
+The command is safe to rerun. Existing TourAPI metadata, scores, check-ins, and
+history are preserved; only the reviewed location and check-in policy are
+reapplied.
 
 ### Internal operations
 

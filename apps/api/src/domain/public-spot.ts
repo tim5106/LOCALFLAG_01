@@ -16,6 +16,9 @@ export interface SpotReadModel {
   status: PublicSpotStatus;
   areaCode: number | null;
   quietWeight: number;
+  geometryType: 'POINT' | 'AREA';
+  checkInEnabled: boolean;
+  checkInRadiusM: number;
 }
 
 export interface PublicSpot {
@@ -29,6 +32,9 @@ export interface PublicSpot {
   estimatedReward: number;
   imageUrl: string | null;
   status: PublicSpotStatus;
+  geometryType: 'POINT' | 'AREA';
+  checkInEnabled: boolean;
+  checkInRadiusM: number;
 }
 
 export function toPublicSpot(spot: SpotReadModel): PublicSpot {
@@ -43,5 +49,8 @@ export function toPublicSpot(spot: SpotReadModel): PublicSpot {
     estimatedReward: estimateReward(spot).points,
     imageUrl: spot.imageUrl,
     status: spot.status,
+    geometryType: spot.geometryType,
+    checkInEnabled: spot.checkInEnabled,
+    checkInRadiusM: spot.checkInRadiusM,
   };
 }

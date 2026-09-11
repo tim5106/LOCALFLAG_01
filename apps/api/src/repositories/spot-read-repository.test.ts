@@ -29,6 +29,8 @@ describe('PostgresSpotReadRepository', () => {
     const { query, subject } = repository();
     await expect(subject.findVisibleById(7)).resolves.toBeNull();
     expect(String(query.mock.calls[0]?.[0])).toContain("s.status in ('ACTIVE', 'SCHEDULED')");
+    expect(String(query.mock.calls[0]?.[0])).toContain('s.check_in_enabled');
+    expect(String(query.mock.calls[0]?.[0])).toContain('s.check_in_radius_m');
   });
 
   it('uses isolated V1 recommendation weights and deterministic ordering', async () => {
