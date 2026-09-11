@@ -1,9 +1,12 @@
-import { Router, type RequestHandler } from 'express';
+import { Router, type Request, type RequestHandler } from 'express';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { CheckInRuleError } from '../domain/check-in.js';
+import { distanceInMeters } from '../domain/geo.js';
 import { HttpError } from '../lib/http-error.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { CheckInService } from '../services/check-in-service.js';
+import { loadFallbackSpots } from './spots.js';
 
 const positionSchema = z.object({
   lat: z.number().min(33).max(39),
@@ -32,11 +35,69 @@ function mapError(error: unknown): unknown {
     : error;
 }
 
+function isDevTestUser(request: Request) {
+  return request.user?.isDevTestUser === true
+    || request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
+}
+
+function mockCheckIn(spotId: number, position: z.infer<typeof positionSchema>) {
+  const checkInId = randomUUID();
+  return { checkInId, status: 'SUCCESS' as const, distanceM: 0, riskCode: null,
+    reward: { points: 100, balance: 100, policyVersion: 'dev-test-v1', factors: { base: 100, areaWeight: 1, quietWeight: 1 } },
+    checkIn: { id: checkInId, spotId, status: 'SUCCESS' as const, reward: { points: 100 } }, position };
+}
+
+async function mockPrecheck(spotId: number, position: z.infer<typeof positionSchema>) {
+  const spot = (await loadFallbackSpots()).find((candidate) => candidate.id === spotId);
+  if (!spot) return null;
+  const distanceM = distanceInMeters(position, spot);
+  const eligible = spot.status === 'ACTIVE' && spot.checkInEnabled && distanceM <= spot.checkInRadiusM;
+  return {
+    eligible,
+    spotId,
+    distanceM: Math.round(distanceM * 10) / 10,
+    allowedRadiusM: spot.checkInRadiusM,
+    accuracyM: position.accuracyM,
+    reasons: eligible ? [] : ['OUT_OF_RANGE'],
+    estimatedReward: eligible ? 100 : 0,
+  };
+}
+
 export function createCheckInsRouter(requireAuth: RequestHandler, service: CheckInService): Router {
   const router = Router();
   router.use(requireAuth);
 
   const limiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
+  router.use(async (request, response, next) => {
+    if (!isDevTestUser(request) || request.method !== 'POST') return next();
+    const body = checkInSchema.safeParse(request.body);
+    if (!body.success) return next();
+    if (request.path === '/precheck') {
+      const result = await mockPrecheck(body.data.spotId, body.data.position);
+      if (!result && request.header('authorization')?.toLowerCase().includes('dev-test-token')) {
+        response.status(404).json({ error: { code: 'SPOT_NOT_FOUND', message: '체크인 가능한 장소를 찾을 수 없습니다.' } }); return;
+      }
+      if (!result) {
+        response.json({ data: { eligible: true, spotId: body.data.spotId, distanceM: 0, allowedRadiusM: 30, accuracyM: body.data.position.accuracyM, reasons: [], estimatedReward: 100 } });
+        return;
+      }
+      response.json({ data: result });
+      return;
+    }
+    if (request.path === '/') {
+      const idempotencyKey = request.header('idempotency-key');
+      if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 100) return next();
+      const result = await mockPrecheck(body.data.spotId, body.data.position);
+      if (!result && request.header('authorization')?.toLowerCase().includes('dev-test-token')) {
+        response.status(404).json({ error: { code: 'SPOT_NOT_FOUND', message: '체크인 가능한 장소를 찾을 수 없습니다.' } }); return;
+      }
+      if (!result) { response.status(201).json({ data: mockCheckIn(body.data.spotId, body.data.position) }); return; }
+      if (!result.eligible) { response.status(422).json({ error: { code: 'OUT_OF_RANGE', message: '체크인 반경 밖입니다.' } }); return; }
+      response.status(201).json({ data: mockCheckIn(body.data.spotId, body.data.position) });
+      return;
+    }
+    next();
+  });
   router.post('/precheck', limiter, async (request, response, next) => {
     try {
       const body = checkInSchema.safeParse(request.body);

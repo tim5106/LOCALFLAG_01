@@ -11,6 +11,7 @@ import type { UserReadRepository } from '../repositories/user-read-repository.js
 
 const userId = '00000000-0000-0000-0000-000000000001';
 const auth: RequestHandler = (req, _res, next) => { req.userId = userId; next(); };
+const devAuth: RequestHandler = (req, _res, next) => { req.userId = userId; req.user = { id: userId, status: 'ACTIVE', isDevTestUser: true }; next(); };
 const spots: SpotReadRepository = {
   list: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(), findVisibleById: vi.fn(),
 };
@@ -20,7 +21,7 @@ const users: UserReadRepository = {
 const checkIns: CheckInRepository = { create: vi.fn(), findOwned: vi.fn() };
 const flags = {} as FlagRepository; const reviews = {} as ReviewRepository;
 const operations = { tourismSync: vi.fn(), festivalSync: vi.fn(), recalculateScores: vi.fn() };
-const app = () => createApp({ spots, users, checkIns, flags, reviews, requireAuth: auth, requireInternal: auth, operations });
+const app = (requireAuth: RequestHandler = auth) => createApp({ spots, users, checkIns, flags, reviews, requireAuth, requireInternal: auth, operations });
 const result = { checkInId: '10000000-0000-4000-8000-000000000001', status: 'SUCCESS' as const,
   distanceM: 42.8, riskCode: null, reward: { points: 150, balance: 650, policyVersion: 'reward-v1',
     factors: { base: 100 as const, areaWeight: 1.5, quietWeight: 1 } } };
@@ -34,6 +35,12 @@ describe('check-in routes', () => {
     const response = await request(app()).post('/api/v1/check-ins').set('Idempotency-Key', 'idem-key-1').send(body()).expect(201);
     expect(response.body.data).toEqual(result);
     expect(checkIns.create).toHaveBeenCalledWith(expect.objectContaining({ userId, spotId: 7, idempotencyKey: 'idem-key-1' }));
+  });
+
+  it('returns a development check-in success response without database persistence', async () => {
+    const response = await request(app(devAuth)).post('/api/v1/check-ins').set('Idempotency-Key', 'dev-idem-1').send(body()).expect(201);
+    expect(response.body.data).toMatchObject({ status: 'SUCCESS', reward: { points: 100 }, checkIn: { status: 'SUCCESS', reward: { points: 100 } } });
+    expect(checkIns.create).not.toHaveBeenCalled();
   });
 
   it('returns 200 and the persisted result for an idempotent replay', async () => {

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ListFilter, Map, Search, Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { getSpots } from '../../api/client';
+import { useMe } from '../../hooks/useMe';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotCard } from '../../components/SpotCard';
 import { SpotDetail } from '../../components/SpotDetail';
@@ -9,7 +10,6 @@ import { SpotMapSheet } from '../../components/SpotMapSheet';
 import { useUiStore } from '../../store/ui-store';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
-import shortlistData from '../../../../../data/jongno_mvp_shortlist.json';
 
 const grades = ['S', 'A', 'B', 'C'] as const;
 
@@ -18,6 +18,10 @@ export function DiscoveryPage() {
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(discoveryFilters.query);
   const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
+  const meQuery = useMe();
+  const hasActiveFilters = discoveryFilters.query.trim().length > 0
+    || discoveryFilters.grades.length > 0
+    || discoveryFilters.decliningArea;
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', discoveryFilters, mapViewport],
     placeholderData: (previous) => previous,
@@ -26,10 +30,10 @@ export function DiscoveryPage() {
       q: discoveryFilters.query || undefined,
       grades: discoveryFilters.grades,
       decliningArea: discoveryFilters.decliningArea || undefined,
-      ...mapViewport ?? {},
+      ...(hasActiveFilters ? mapViewport ?? {} : {}),
     }, signal),
   });
-  const spots = spotsQuery.data?.data ?? [];
+  const spots = (spotsQuery.data?.data ?? []).filter((spot) => spot.geometryType !== 'EXCLUDE');
   if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
 
   const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,7 +52,7 @@ export function DiscoveryPage() {
   }, [setMapViewport]);
 
   const source = spotsQuery.data?.meta.source;
-  const mapSpots = Array.from(new globalThis.Map([...spots, ...shortlistData.data].map((spot) => [spot.id, spot])).values()) as Spot[];
+  const mapSpots = spots;
   return (
     <main className="page discovery-page">
       <header className="hero">
@@ -56,7 +60,7 @@ export function DiscoveryPage() {
           <p className="eyebrow"><Sparkles size={15} /> 오늘의 로컬 발견</p>
           <h1>사람들보다 먼저<br />숨은 장소를 발견해보세요</h1>
         </div>
-        <div className="hero__balance"><small>보유 포인트</small><strong>1,250P</strong></div>
+        <div className="hero__balance"><small>보유 포인트</small><strong>{meQuery.isPending ? '...' : `${meQuery.profile?.pointBalance ?? 0}P`}</strong></div>
       </header>
 
       <form className="search-row" onSubmit={submitSearch} role="search">

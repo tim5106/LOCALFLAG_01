@@ -1,8 +1,9 @@
 import { webEnv } from '../config/env';
 import type { ApiErrorBody, ApiListResponse } from '../types/api';
-import { ApiRequestError } from '../types/api';
+import { ApiRequestError, CheckInApiError } from '../types/api';
 import type { Spot } from '../types/spot';
 import { getAccessToken } from '../features/auth/auth';
+import { buildCheckInPayload, buildPrecheckPayload, type CheckInPosition, type CheckInResponse, type CheckInResult, type PrecheckResult } from '../features/check-in/api-types';
 
 export interface SpotQuery {
   minLat?: number;
@@ -17,6 +18,7 @@ export interface SpotQuery {
   cursor?: string;
   limit?: number;
 }
+export interface MeProfile { id: string; nickname?: string | null; pointBalance?: number; equippedFlagSkinId?: string | null; }
 
 export const prototypeSpots: Spot[] = [
   { id: 100001, title: '보성 대한다원 전망대', address: '전라남도 보성군', contentTypeId: 12, grade: 'A', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 34.9671, lng: 127.1694 } },
@@ -37,7 +39,8 @@ export async function getSpots(query: SpotQuery = {}, signal?: AbortSignal): Pro
   const params = toQueryString({ limit: 20, ...query });
   let response: Response;
   try {
-    response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal });
+    const accessToken = getAccessToken();
+    response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal, headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
     return fallbackSpots(query);
@@ -61,36 +64,49 @@ function fallbackSpots(query: SpotQuery): ApiListResponse<Spot> {
   return { data, meta: { nextCursor: null, hasNext: false, source: 'fallback' } };
 }
 
-export interface PositionInput {
-  lat: number;
-  lng: number;
-  accuracyM: number;
-  capturedAt: string;
-}
+export type PositionInput = CheckInPosition;
 
-export async function precheckSpot(spotId: number, position: PositionInput) {
+export async function precheckSpot(spotId: number | string, position: PositionInput): Promise<CheckInResponse<PrecheckResult>> {
   const response = await fetch(`${webEnv.apiBaseUrl}/check-ins/precheck`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) },
-    body: JSON.stringify({ spotId, position }),
+    body: JSON.stringify(buildPrecheckPayload(spotId, position)),
   });
 
   const body = (await response.json()) as unknown;
   if (!response.ok) {
-    throw new ApiRequestError(response.status, body as ApiErrorBody);
+    throw new CheckInApiError(response.status, body as ApiErrorBody);
   }
 
-  return body;
+  return body as CheckInResponse<PrecheckResult>;
 }
 
-export async function createCheckIn(spotId: number, position: PositionInput) {
-  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) }, body: JSON.stringify({ spotId, position }) });
+export async function createCheckIn(spotId: number | string, position: PositionInput): Promise<CheckInResponse<CheckInResult>> {
+  const response = await fetch(`${webEnv.apiBaseUrl}/check-ins`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(), ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) }, body: JSON.stringify(buildCheckInPayload(spotId, position)) });
+  const body = await response.json() as unknown;
+  if (!response.ok) throw new CheckInApiError(response.status, body as ApiErrorBody);
+  return body as CheckInResponse<CheckInResult>;
+}
+
+export async function getMe(): Promise<{ data: MeProfile }> { return authorizedGet('/me') as Promise<{ data: MeProfile }>; }
+export async function getPointLedger() { return authorizedGet('/me/point-ledger'); }
+export async function getFlagSkins() { return authorizedGet('/flag-skins'); }
+export async function getMyMap() { return authorizedGet('/me/map'); }
+export async function purchaseFlagSkin(skinId: string) {
+  return authorizedRequest(`/flag-skins/${encodeURIComponent(skinId)}/purchase`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() } });
+}
+
+export async function getNearbySpots(lat: number, lng: number, radiusM = 2_000, limit = 20) {
+  return authorizedGet(`/spots/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radiusM=${radiusM}&limit=${limit}`) as Promise<ApiListResponse<Spot & { distanceM: number }>>;
+}
+export async function equipFlagSkin(skinId: string) {
+  return authorizedRequest('/me/equipped-flag-skin', { method: 'PUT', body: JSON.stringify({ skinId }) });
+}
+async function authorizedGet(path: string) { const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { headers: { ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) } }); const body = await response.json() as unknown; if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody); return body; }
+async function authorizedRequest(path: string, init: RequestInit = {}) {
+  const accessToken = getAccessToken();
+  const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) } });
   const body = await response.json() as unknown;
   if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody);
   return body;
 }
-
-export async function getMe() { return authorizedGet('/me'); }
-export async function getPointLedger() { return authorizedGet('/me/point-ledger'); }
-export async function getFlagSkins() { return authorizedGet('/flag-skins'); }
-async function authorizedGet(path: string) { const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { headers: { ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) } }); const body = await response.json() as unknown; if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody); return body; }

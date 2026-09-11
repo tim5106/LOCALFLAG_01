@@ -1,7 +1,9 @@
 export type SpotGrade = 'S' | 'A' | 'B' | 'C';
+export type CheckInStatus = 'LOCKED' | 'AVAILABLE' | 'PENDING' | 'COMPLETED';
 
 export interface Spot {
   id: number;
+  name?: string;
   title: string;
   address: string;
   contentTypeId: number;

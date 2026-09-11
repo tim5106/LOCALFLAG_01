@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getSpots, toQueryString } from './client';
+import { getSpots, precheckSpot, toQueryString } from './client';
 
 describe('spot API client', () => {
   beforeEach(() => vi.restoreAllMocks());
@@ -30,5 +30,10 @@ describe('spot API client', () => {
   it('throws a typed error for client errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: 'INVALID_QUERY', message: 'bad query', traceId: 'trace-1' } }), { status: 400 })));
     await expect(getSpots()).rejects.toMatchObject({ status: 400, code: 'INVALID_QUERY', traceId: 'trace-1' });
+  });
+
+  it('preserves typed 501 errors from precheck', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: 'CHECK_IN_PERSISTENCE_NOT_IMPLEMENTED', message: 'not ready' } }), { status: 501 })));
+    await expect(precheckSpot(123, { lat: 37.58, lng: 126.98, accuracyM: 5, capturedAt: new Date().toISOString() })).rejects.toMatchObject({ status: 501, isNotImplemented: true });
   });
 });

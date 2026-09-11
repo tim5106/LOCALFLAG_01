@@ -37,6 +37,7 @@ const envSchema = z.object({
   }),
   KAKAO_REST_API_KEY: z.string().min(1).optional(),
   INTERNAL_CRON_SECRET: z.string().min(16).optional(),
+  DEV_TEST_USER_ID: z.uuid().default('00000000-0000-0000-0000-000000000001'),
 });
 
 const parsed = envSchema.safeParse(process.env);
