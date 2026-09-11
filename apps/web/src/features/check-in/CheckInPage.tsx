@@ -1,7 +1,7 @@
 import { Crosshair, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createCheckIn, getSpots, precheckSpot, type PositionInput } from '../../api/client';
+import { createCheckIn, getNearbySpots, precheckSpot, type PositionInput } from '../../api/client';
 import { CheckInApiError } from '../../types/api';
 import type { Spot } from '../../types/spot';
 import { CheckInMap } from '../../components/CheckInMap';
@@ -14,7 +14,11 @@ type CheckInModal = { status: 'success' | 'pending' | 'failure'; points?: number
 export function CheckInPage() {
   const queryClient = useQueryClient();
   const [state, setState] = useState<LocationState>('idle'); const [accuracy, setAccuracy] = useState<number | null>(null); const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null); const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null); const [message, setMessage] = useState(''); const [precheck, setPrecheck] = useState<PrecheckResult | null>(null); const [loading, setLoading] = useState(false); const [modal, setModal] = useState<CheckInModal | null>(null); const [completedIds, setCompletedIds] = useState<number[]>([]);
-  const spotsQuery = useQuery({ queryKey: ['check-in-spots'], queryFn: () => getSpots({ areaCode: '1', sigunguCode: '23', limit: 20 }) });
+  const spotsQuery = useQuery({
+    queryKey: ['check-in-spots', position?.lat, position?.lng],
+    queryFn: () => position ? getNearbySpots(position.lat, position.lng, 2_000, 20) : Promise.resolve({ data: [], meta: { nextCursor: null, hasNext: false } }),
+    enabled: position !== null,
+  });
 
   const requestLocation = () => { if (!navigator.geolocation) { setState('unsupported'); setMessage('이 브라우저에서는 위치 정보를 지원하지 않습니다.'); return; } setMessage(''); setState('requesting'); navigator.geolocation.getCurrentPosition(({ coords }) => { const nextAccuracy = Math.round(coords.accuracy); setAccuracy(nextAccuracy); setPosition({ lat: coords.latitude, lng: coords.longitude }); setState(nextAccuracy > 50 ? 'inaccurate' : 'measured'); }, (error) => { setState(error.code === error.PERMISSION_DENIED ? 'denied' : 'idle'); setMessage(error.code === error.PERMISSION_DENIED ? '브라우저에서 위치 권한을 허용해주세요.' : '현재 위치를 확인하지 못했습니다. 다시 시도해주세요.'); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }); };
   useEffect(() => { requestLocation(); }, []);

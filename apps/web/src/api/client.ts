@@ -95,6 +95,10 @@ export async function getMyMap() { return authorizedGet('/me/map'); }
 export async function purchaseFlagSkin(skinId: string) {
   return authorizedRequest(`/flag-skins/${encodeURIComponent(skinId)}/purchase`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() } });
 }
+
+export async function getNearbySpots(lat: number, lng: number, radiusM = 2_000, limit = 20) {
+  return authorizedGet(`/spots/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radiusM=${radiusM}&limit=${limit}`) as Promise<ApiListResponse<Spot & { distanceM: number }>>;
+}
 export async function equipFlagSkin(skinId: string) {
   return authorizedRequest('/me/equipped-flag-skin', { method: 'PUT', body: JSON.stringify({ skinId }) });
 }

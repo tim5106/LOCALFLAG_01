@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { calculateSpotScore } from '../domain/spot-score.js';
 import { toPublicSpot } from '../domain/public-spot.js';
+import { distanceInMeters } from '../domain/geo.js';
 import { RECOMMENDATION_V1 } from '../domain/recommendation.js';
 import { SUPPORTED_CONTENT_TYPE_IDS, type SpotGrade, type SupportedContentTypeId } from '../domain/tourism.js';
 import { CursorError, decodeCursor, encodeCursor } from '../lib/cursor.js';
@@ -32,7 +33,7 @@ interface FallbackSource {
 
 let fallbackSpotsPromise: Promise<SpotReadModel[]> | undefined;
 
-async function loadFallbackSpots(): Promise<SpotReadModel[]> {
+export async function loadFallbackSpots(): Promise<SpotReadModel[]> {
   fallbackSpotsPromise ??= readFile(
     resolve(dirname(fileURLToPath(import.meta.url)), '../../../../data/jongno_mvp_shortlist.json'),
     'utf8',
@@ -224,9 +225,39 @@ export function createSpotsRouter(repository: SpotReadRepository, requireAuth: R
         limit: z.coerce.number().int().min(1).max(50).default(20),
       }).safeParse(request.query);
       if (!query.success) throw new HttpError(400, 'INVALID_QUERY', '현재 위치 검색 조건을 확인해 주세요.', { issues: query.error.issues });
+      if (isDevTestRequest(request)) {
+        const fallback = (await loadFallbackSpots())
+          .filter((spot) => spot.status === 'ACTIVE' && spot.checkInEnabled)
+          .map((spot) => ({ ...spot, distanceM: distanceInMeters(query.data, spot) }))
+          .filter((spot) => spot.distanceM <= query.data.radiusM)
+          .sort((left, right) => left.distanceM - right.distanceM || left.id - right.id)
+          .slice(0, query.data.limit);
+        response.json({ data: fallback.map((row) => ({ ...toPublicSpot(row), distanceM: Math.round(row.distanceM * 10) / 10 })) });
+        return;
+      }
       const rows = await repository.nearby(query.data);
       response.json({ data: rows.map((row) => ({ ...toPublicSpot(row), distanceM: Math.round(row.distanceM * 10) / 10 })) });
-    } catch (error) { next(error); }
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[nearby-fallback] PostgreSQL unavailable; serving Jongno MVP nearby fallback.', { error });
+        const fallbackQueryResult = z.object({
+          lat: coordinate.min(33).max(39), lng: coordinate.min(124).max(132),
+          radiusM: z.coerce.number().int().min(100).max(10_000).default(2_000),
+          limit: z.coerce.number().int().min(1).max(50).default(20),
+        }).safeParse(request.query);
+        if (!fallbackQueryResult.success) { next(error); return; }
+        const fallbackQuery = fallbackQueryResult.data;
+        const fallback = (await loadFallbackSpots())
+          .filter((spot) => spot.status === 'ACTIVE' && spot.checkInEnabled)
+          .map((spot) => ({ ...spot, distanceM: distanceInMeters(fallbackQuery, spot) }))
+          .filter((spot) => spot.distanceM <= fallbackQuery.radiusM)
+          .sort((left, right) => left.distanceM - right.distanceM || left.id - right.id)
+          .slice(0, fallbackQuery.limit);
+        response.json({ data: fallback.map((row) => ({ ...toPublicSpot(row), distanceM: Math.round(row.distanceM * 10) / 10 })) });
+        return;
+      }
+      next(error);
+    }
   });
 
   router.get('/:spotId', async (request, response, next) => {
