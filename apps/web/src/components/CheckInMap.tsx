@@ -47,6 +47,16 @@ export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMap
   useEffect(() => { if (state !== 'ready' || !onMapClick || !window.kakao || !mapRef.current) return; const handler = (event: any) => onMapClick(event.latLng.getLat(), event.latLng.getLng()); window.kakao.maps.event.addListener(mapRef.current, 'click', handler); return () => window.kakao?.maps?.event?.removeListener(mapRef.current, 'click', handler); }, [state, onMapClick]);
   useEffect(() => { if (state === 'ready') { mapRef.current?.setDraggable(false); mapRef.current?.setZoomable(true); } }, [state]);
   useEffect(() => {
+    if (state !== 'ready' || !window.kakao || !mapRef.current) return;
+    const map = mapRef.current;
+    const handleZoomChanged = () => {
+      const currentPosition = positionRef.current;
+      if (currentPosition) map.setCenter(new window.kakao.maps.LatLng(currentPosition.lat, currentPosition.lng));
+    };
+    window.kakao.maps.event.addListener(map, 'zoom_changed', handleZoomChanged);
+    return () => window.kakao?.maps?.event?.removeListener(map, 'zoom_changed', handleZoomChanged);
+  }, [state]);
+  useEffect(() => {
     window.__handleSpotClick = (spotId) => {
       const targetSpot = spotsRef.current.find((spot) => String(spot.id) === String(spotId) || String((spot as Spot & { spotId?: string | number }).spotId) === String(spotId) || String((spot as Spot & { contentid?: string | number }).contentid) === String(spotId));
       const targetPosition = positionRef.current;
