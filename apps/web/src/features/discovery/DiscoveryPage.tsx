@@ -10,7 +10,6 @@ import { SpotMapSheet } from '../../components/SpotMapSheet';
 import { useUiStore } from '../../store/ui-store';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
-import shortlistData from '../../../../../data/jongno_mvp_shortlist.json';
 
 const grades = ['S', 'A', 'B', 'C'] as const;
 
@@ -20,6 +19,9 @@ export function DiscoveryPage() {
   const [searchInput, setSearchInput] = useState(discoveryFilters.query);
   const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
   const meQuery = useMe();
+  const hasActiveFilters = discoveryFilters.query.trim().length > 0
+    || discoveryFilters.grades.length > 0
+    || discoveryFilters.decliningArea;
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', discoveryFilters, mapViewport],
     placeholderData: (previous) => previous,
@@ -28,7 +30,7 @@ export function DiscoveryPage() {
       q: discoveryFilters.query || undefined,
       grades: discoveryFilters.grades,
       decliningArea: discoveryFilters.decliningArea || undefined,
-      ...mapViewport ?? {},
+      ...(hasActiveFilters ? mapViewport ?? {} : {}),
     }, signal),
   });
   const spots = (spotsQuery.data?.data ?? []).filter((spot) => spot.geometryType !== 'EXCLUDE');
@@ -50,7 +52,7 @@ export function DiscoveryPage() {
   }, [setMapViewport]);
 
   const source = spotsQuery.data?.meta.source;
-  const mapSpots = Array.from(new globalThis.Map([...spots, ...shortlistData.data].map((spot) => [spot.id, spot])).values()).filter((spot) => (spot as Spot).geometryType !== 'EXCLUDE') as Spot[];
+  const mapSpots = spots;
   return (
     <main className="page discovery-page">
       <header className="hero">
