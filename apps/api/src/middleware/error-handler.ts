@@ -10,7 +10,13 @@ export const errorHandler: ErrorRequestHandler = (error, request, response, _nex
   const status = knownError ? error.status : 500;
 
   if (!knownError) {
-    console.error(`[${request.traceId}]`, error);
+    console.error('[api-error]', {
+      traceId: request.traceId,
+      method: request.method,
+      path: request.originalUrl,
+      error,
+    });
+    if (error instanceof Error && error.stack) console.error(error.stack);
   }
 
   response.status(status).json({

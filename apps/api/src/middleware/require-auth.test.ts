@@ -43,7 +43,7 @@ describe('createRequireAuth', () => {
     expect(users.findProfile).toHaveBeenCalledWith('user-1');
   });
 
-  it('accepts the development test token without contacting Supabase', async () => {
+  it('accepts the development test token without a database profile lookup', async () => {
     const response = await request(app()).get('/protected').set('authorization', 'Bearer dev-test-token').expect(200);
     expect(response.body.userId).toBe('00000000-0000-0000-0000-000000000001');
     expect(verifier.verify).not.toHaveBeenCalled();

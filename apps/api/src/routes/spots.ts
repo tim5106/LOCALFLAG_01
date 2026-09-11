@@ -1,15 +1,97 @@
-import { Router, type RequestHandler } from 'express';
+import { Router, type Request, type RequestHandler } from 'express';
+import { readFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+import { calculateSpotScore } from '../domain/spot-score.js';
 import { toPublicSpot } from '../domain/public-spot.js';
 import { RECOMMENDATION_V1 } from '../domain/recommendation.js';
-import { SUPPORTED_CONTENT_TYPE_IDS, type SpotGrade } from '../domain/tourism.js';
+import { SUPPORTED_CONTENT_TYPE_IDS, type SpotGrade, type SupportedContentTypeId } from '../domain/tourism.js';
 import { CursorError, decodeCursor, encodeCursor } from '../lib/cursor.js';
 import { HttpError } from '../lib/http-error.js';
-import type { SpotReadRepository } from '../repositories/spot-read-repository.js';
+import type { SpotListFilters, SpotReadRepository } from '../repositories/spot-read-repository.js';
+import type { SpotReadModel } from '../domain/public-spot.js';
 
 const gradeValues = ['S', 'A', 'B', 'C'] as const;
 const baseLimit = z.coerce.number().int().min(1).max(100).default(20);
 const coordinate = z.coerce.number().finite();
+
+interface FallbackSource {
+  data: Array<{
+    id: number;
+    title: string;
+    address: string;
+    contentTypeId: SupportedContentTypeId;
+    location: { lat: number; lng: number };
+    imageUrl: string | null;
+    geometryType: 'POINT' | 'AREA';
+    checkInEnabled: boolean;
+    checkInRadiusM: number;
+  }>;
+}
+
+let fallbackSpotsPromise: Promise<SpotReadModel[]> | undefined;
+
+async function loadFallbackSpots(): Promise<SpotReadModel[]> {
+  fallbackSpotsPromise ??= readFile(
+    resolve(dirname(fileURLToPath(import.meta.url)), '../../../../data/jongno_mvp_shortlist.json'),
+    'utf8',
+  ).then((raw) => {
+    const source = JSON.parse(raw) as FallbackSource;
+    return source.data.map((spot) => ({
+      id: spot.id,
+      title: spot.title,
+      address: spot.address,
+      contentTypeId: spot.contentTypeId,
+      lat: spot.location.lat,
+      lng: spot.location.lng,
+      grade: calculateSpotScore({
+        contentId: spot.id,
+        contentTypeId: spot.contentTypeId,
+        title: spot.title,
+        address: spot.address,
+        latitude: spot.location.lat,
+        longitude: spot.location.lng,
+        areaCode: 1,
+        sigunguCode: 23,
+        imageUrl: spot.imageUrl,
+        thumbnailUrl: null,
+        eventStartDate: null,
+        eventEndDate: null,
+        additionalImageCount: 0,
+        detailFieldCount: 0,
+        classificationWeight: 0,
+        rawJson: {},
+      }).grade,
+      isDecliningArea: false,
+      imageUrl: spot.imageUrl,
+      status: 'ACTIVE' as const,
+      areaCode: 1,
+      quietWeight: 1,
+      geometryType: spot.geometryType,
+      checkInEnabled: spot.checkInEnabled,
+      checkInRadiusM: spot.checkInRadiusM,
+    }));
+  });
+  return fallbackSpotsPromise;
+}
+
+async function listDevelopmentFallback(filters: SpotListFilters): Promise<SpotReadModel[]> {
+  const spots = await loadFallbackSpots();
+  return spots.filter((spot) => (
+    (filters.minLat === undefined || spot.lat >= filters.minLat)
+    && (filters.maxLat === undefined || spot.lat <= filters.maxLat)
+    && (filters.minLng === undefined || spot.lng >= filters.minLng)
+    && (filters.maxLng === undefined || spot.lng <= filters.maxLng)
+    && (!filters.contentTypeIds?.length || filters.contentTypeIds.includes(spot.contentTypeId as never))
+    && (!filters.grades?.length || filters.grades.includes(spot.grade))
+    && (filters.decliningArea === undefined || filters.decliningArea === spot.isDecliningArea)
+    && (!filters.q || `${spot.title} ${spot.address}`.toLowerCase().includes(filters.q.toLowerCase()))
+    && (filters.areaCode === undefined || filters.areaCode === spot.areaCode)
+    && (filters.sigunguCode === undefined || filters.sigunguCode === 23)
+    && (filters.afterId === undefined || spot.id > filters.afterId)
+  )).slice(0, filters.limit);
+}
 
 const listQuerySchema = z.object({
   minLat: coordinate.min(33).max(39).optional(), minLng: coordinate.min(124).max(132).optional(),
@@ -71,6 +153,10 @@ function mapCursorError(error: unknown): unknown {
     : error;
 }
 
+function isDevTestRequest(request: Request): boolean {
+  return request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
+}
+
 export function createSpotsRouter(repository: SpotReadRepository, requireAuth: RequestHandler): Router {
   const router = Router();
   router.get('/', async (request, response, next) => {
@@ -85,12 +171,25 @@ export function createSpotsRouter(repository: SpotReadRepository, requireAuth: R
         throw new HttpError(400, 'INVALID_BBOX', '지도 영역의 최소 좌표가 최대 좌표보다 클 수 없습니다.');
       }
       const after = query.data.cursor ? listCursor(query.data.cursor) : undefined;
-      const rows = await repository.list({
+      const filters = {
         ...query.data,
         contentTypeIds: parseContentTypes(query.data.contentTypeIds), grades: parseGrades(query.data.grades),
         decliningArea: query.data.decliningArea === undefined ? undefined : query.data.decliningArea === 'true',
         afterId: after?.id, limit: query.data.limit + 1,
-      });
+      };
+      let rows: SpotReadModel[];
+      if (isDevTestRequest(request)) {
+        rows = await listDevelopmentFallback(filters);
+      } else try {
+        rows = await repository.list(filters);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'production') throw error;
+        console.warn('[spots-fallback] PostgreSQL unavailable; serving Jongno MVP JSON fallback.', {
+          traceId: request.traceId,
+          error,
+        });
+        rows = await listDevelopmentFallback(filters);
+      }
       const hasNext = rows.length > query.data.limit;
       const page = rows.slice(0, query.data.limit);
       response.json({ data: page.map(toPublicSpot), meta: {

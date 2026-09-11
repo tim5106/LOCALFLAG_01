@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "npm run build && node dist/server.js",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "sync:tour-spots": "tsx src/scripts/sync-tour-spots.ts",
-    "seed:jongno-mvp": "tsx src/scripts/apply-jongno-mvp.ts",
+    "seed:jongno-mvp": "npm run build && node dist/scripts/apply-jongno-mvp.js",
     "typecheck": "tsc -p tsconfig.json --noEmit --pretty false",
     "test": "vitest run"
   },

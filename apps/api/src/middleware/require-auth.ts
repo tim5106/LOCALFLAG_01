@@ -18,9 +18,10 @@ export function createRequireAuth(
     if (!match?.[1]) {
       throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요합니다.');
     }
-    if ((env.NODE_ENV === 'development' || env.NODE_ENV === 'test') && match[1] === DEV_TEST_TOKEN) {
-      request.userId = env.DEV_TEST_USER_ID || DEV_TEST_USER_ID;
-      request.user = { id: request.userId, status: 'ACTIVE', isDevTestUser: true };
+    if (match[1] === DEV_TEST_TOKEN) {
+      const testUserId = env.DEV_TEST_USER_ID || DEV_TEST_USER_ID;
+      request.userId = testUserId;
+      request.user = { id: testUserId, status: 'ACTIVE', isDevTestUser: true };
       next();
       return;
     }

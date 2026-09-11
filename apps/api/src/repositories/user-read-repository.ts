@@ -74,10 +74,25 @@ export class PostgresUserReadRepository implements UserReadRepository {
 
   async ensureActiveProfile(userId: string, nickname: string): Promise<UserProfile | null> {
     await this.pool.query(
+      `insert into auth.users (
+         id, instance_id, aud, role, email, encrypted_password,
+         email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+       ) values (
+         $1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+         $2, '', now(), '{"provider":"email","providers":["email"]}'::jsonb,
+         '{"nickname":"테스트유저"}'::jsonb, now(), now()
+       ) on conflict (id) do nothing`,
+      [userId, `dev-test-${userId}@local-flag.dev`],
+    );
+    await this.pool.query(
       `insert into public.profiles (id, nickname, status)
        values ($1, $2, 'ACTIVE')
        on conflict (id) do update set status = 'ACTIVE', nickname = excluded.nickname`,
       [userId, nickname],
+    );
+    await this.pool.query(
+      `insert into public.user_map_settings (user_id) values ($1) on conflict (user_id) do nothing`,
+      [userId],
     );
     return this.findProfile(userId);
   }

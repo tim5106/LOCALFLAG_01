@@ -109,11 +109,17 @@ export class PostgresSpotReadRepository implements SpotReadRepository {
     if (filters.afterId !== undefined) where.push(`s.content_id > ${bind(filters.afterId)}`);
     const limit = bind(filters.limit);
 
-    const result = await this.pool.query<SpotRow>(
-      `select ${SPOT_COLUMNS} ${SPOT_FROM} where ${where.join(' and ')} order by s.content_id asc limit ${limit}`,
-      values,
-    );
-    return result.rows.map(mapSpot);
+    try {
+      const result = await this.pool.query<SpotRow>(
+        `select ${SPOT_COLUMNS} ${SPOT_FROM} where ${where.join(' and ')} order by s.content_id asc limit ${limit}`,
+        values,
+      );
+      return result.rows.map(mapSpot);
+    } catch (error) {
+      console.error('[spots-db-error] list query failed', { error, filters });
+      if (error instanceof Error && error.stack) console.error(error.stack);
+      throw error;
+    }
   }
 
   async findVisibleById(spotId: number): Promise<SpotReadModel | null> {
