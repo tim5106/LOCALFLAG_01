@@ -20,7 +20,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .app-frame { position: relative; width: min(100%, 480px); height: 100dvh; min-height: 100vh; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; background: #f7f4ec; box-shadow: 0 24px 80px rgba(20, 47, 40, .16); }
 .app-frame::-webkit-scrollbar { display: none; }
 .page { min-height: 100vh; padding: 28px 20px 112px; }
-.discovery-page { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.discovery-page { min-height: 100vh; background: linear-gradient(180deg, #faf8f2 0%, #f7f4ec 100%); }
 .auth-page { min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 52px 24px 36px; background: linear-gradient(155deg, #f7f4ec, #e7f0e6); }
 .auth-brand { max-width: 330px; }
 .auth-logo { display: grid; place-items: center; width: 62px; height: 62px; margin-bottom: 28px; border-radius: 20px; background: #173f35; color: #f0c75e; box-shadow: 0 14px 30px rgba(23,63,53,.18); }
@@ -52,6 +52,22 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .hero__balance small { font-size: 10px; opacity: .7; }
 .hero__balance strong { margin-top: 2px; font-size: 15px; }
 
+.discovery-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 56px; margin: -12px 0 14px; }
+.discovery-brand, .discovery-header__actions { display: flex; align-items: center; gap: 8px; }
+.discovery-brand { color: #183b33; font-size: 17px; letter-spacing: -.04em; }
+.discovery-brand__mark { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: #173f35; color: #f0c75e; }
+.discovery-header__actions { gap: 8px; }
+.discovery-header__actions .hero__balance { padding: 7px 10px; border-radius: 999px; background: rgba(240, 199, 94, .8); color: #183b33; box-shadow: none; }
+.discovery-header__actions .hero__balance small { display: none; }
+.discovery-header__actions .hero__balance strong { margin: 0; font-size: 12px; }
+.discovery-profile { display: grid; place-items: center; width: 32px; height: 32px; min-height: 32px; padding: 0; border: 0; border-radius: 50%; background: #c8553d; color: #fff; cursor: pointer; }
+.discovery-intro { margin: 2px 0 22px; }
+.discovery-intro h1 { margin: 0; color: #183b33; font-size: clamp(30px, 8vw, 40px); line-height: 1.08; letter-spacing: -.07em; }
+.discovery-intro > p:last-child { margin: 12px 0 0; color: #718079; font-size: 12px; line-height: 1.55; }
+.discovery-count { display: flex; align-items: baseline; gap: 10px; margin: 18px 0 6px; }
+.discovery-count strong { color: #b85b43; font-size: 58px; line-height: .9; letter-spacing: -.08em; }
+.discovery-count span { color: #718079; font-size: 20px; font-weight: 500; }
+
 .search-row { display: flex; gap: 10px; margin-bottom: 14px; }
 .search-box { flex: 1; display: flex; align-items: center; gap: 9px; padding: 13px 14px; border: 1px solid #ded9cd; border-radius: 16px; background: #fff; }
 .search-box input { width: 100%; border: 0; outline: 0; color: #173f35; background: transparent; }
@@ -68,6 +84,29 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .view-toggle button { display: flex; align-items: center; gap: 5px; padding: 7px 11px; border: 0; border-radius: 9px; background: transparent; color: #718079; font-size: 11px; font-weight: 700; cursor: pointer; }
 .view-toggle button[data-active="true"] { background: #fff; color: #173f35; box-shadow: 0 2px 8px rgba(23,63,53,.08); }
 .result-count { color: #7c8983; font-size: 11px; font-weight: 700; }
+.discovery-view-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.discovery-view-row .view-toggle { margin-bottom: 0; }
+.discovery-view-row .data-source { margin: 0; padding: 5px 8px; border-radius: 999px; background: #edf4ed; color: #42705f; font-size: 10px; font-weight: 800; }
+.discovery-map-stage { position: relative; margin: 0 -2px; }
+.discovery-map-card { overflow: hidden; border-radius: 26px; box-shadow: 0 16px 36px rgba(43, 73, 63, .13); }
+.discovery-map-card .map-preview { height: 500px; min-height: 500px; border-radius: 26px; box-shadow: none; }
+.discovery-map-card .map-canvas { min-height: 500px; }
+.discovery-map-callout { position: absolute; top: 18px; left: 48px; z-index: 5; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 72px); min-height: 48px; padding: 8px 10px; border: 1px solid rgba(240, 93, 63, .45); border-radius: 15px; background: rgba(255, 255, 255, .96); box-shadow: 0 14px 28px rgba(23, 63, 53, .18); cursor: pointer; }
+.discovery-map-callout strong { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #d7664c; color: #fff; font-size: 13px; }
+.discovery-map-callout strong[data-grade="S"] { background: #e1c65e; color: #6f5a00; }
+.discovery-map-callout strong[data-grade="B"] { background: #257e68; }
+.discovery-map-callout span { overflow: hidden; color: #183b33; font-size: 15px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.discovery-map-callout em { padding: 5px 7px; border-radius: 7px; background: #fff3dc; color: #c8553d; font-size: 11px; font-style: normal; font-weight: 800; white-space: nowrap; }
+.discovery-selected-card { display: grid; grid-template-columns: 68px 1fr auto; align-items: center; gap: 14px; margin-top: 20px; padding: 14px 16px; border: 1px solid #ded9cd; border-radius: 22px; background: rgba(255, 255, 255, .95); box-shadow: 0 10px 28px rgba(23, 63, 53, .08); }
+.discovery-selected-card__icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 17px; background: #fff3dc; color: #b85b43; }
+.discovery-selected-card__body { min-width: 0; }
+.discovery-selected-card__body span { display: inline-block; margin-bottom: 3px; padding: 4px 7px; border-radius: 5px; background: #d7664c; color: #fff; font-size: 10px; font-weight: 800; }
+.discovery-selected-card__body strong, .discovery-selected-card__body small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.discovery-selected-card__body strong { color: #183b33; font-size: 19px; letter-spacing: -.04em; }
+.discovery-selected-card__body small { margin-top: 4px; color: #718079; font-size: 12px; }
+.discovery-selected-card > b { color: #b85b43; font-size: 15px; white-space: nowrap; }
+.discovery-check-in-button { display: flex; justify-content: center; align-items: center; gap: 14px; width: 100%; min-height: 76px; margin-top: 18px; border: 0; border-radius: 23px; background: #b85b43; color: #fff8e9; box-shadow: 0 12px 24px rgba(184, 91, 67, .22); font-size: 19px; font-weight: 800; cursor: pointer; }
+.discovery-check-in-button svg:first-child { color: #f0c75e; }
 
 .map-preview { position: relative; flex: 0 0 276px; width: 100%; height: 276px; min-height: 276px; flex-shrink: 0; overflow: hidden; border-radius: 26px; background: linear-gradient(145deg, #dbe8d7, #b9d2c5); box-shadow: inset 0 0 0 1px rgba(23, 63, 53, .08), 0 16px 36px rgba(43, 73, 63, .13); }
 .map-preview--kakao { background: #dbe8d7; }
@@ -100,6 +139,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .spot-list--carousel { display: flex; flex: 0 0 auto; flex-wrap: nowrap; width: 100%; max-width: 100%; gap: 12px; overflow-x: auto; overflow-y: visible; padding: 0 4px calc(100px + env(safe-area-inset-bottom)) 0; scroll-snap-type: x mandatory; scroll-padding-inline: 0; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; }
 .spot-list--carousel::-webkit-scrollbar { display: none; }
 .spot-list--carousel .spot-card { flex: 0 0 72%; flex-shrink: 0; scroll-snap-align: start; }
+.discovery-page .section-block { display: block; flex: none; min-height: 0; }
+.discovery-page .spot-list--vertical { overflow: visible; padding-bottom: 0; }
+.discovery-page .spot-list--vertical .spot-card { margin-bottom: 12px; }
 .spot-card { display: grid; grid-template-columns: 100px 1fr; min-height: 108px; overflow: hidden; border: 1px solid #e3ded2; border-radius: 20px; background: #fff; box-shadow: 0 8px 22px rgba(38, 58, 51, .06); }
 .spot-card { cursor: pointer; }
 .spot-card:focus-visible { outline: 3px solid #f0b847; outline-offset: 3px; }
