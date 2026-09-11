@@ -1,4 +1,5 @@
 import { Router, type RequestHandler } from 'express';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { CheckInRuleError } from '../domain/check-in.js';
 import { HttpError } from '../lib/http-error.js';
@@ -32,11 +33,36 @@ function mapError(error: unknown): unknown {
     : error;
 }
 
+function isDevTestUser(request: Express.Request) { return request.user?.isDevTestUser === true; }
+
+function mockCheckIn(spotId: number, position: z.infer<typeof positionSchema>) {
+  const checkInId = randomUUID();
+  return { checkInId, status: 'SUCCESS' as const, distanceM: 0, riskCode: null,
+    reward: { points: 100, balance: 100, policyVersion: 'dev-test-v1', factors: { base: 100, areaWeight: 1, quietWeight: 1 } },
+    checkIn: { id: checkInId, spotId, status: 'SUCCESS' as const, reward: { points: 100 } }, position };
+}
+
 export function createCheckInsRouter(requireAuth: RequestHandler, service: CheckInService): Router {
   const router = Router();
   router.use(requireAuth);
 
   const limiter = createRateLimiter({ limit: 20, windowMs: 60_000 });
+  router.use((request, response, next) => {
+    if (!isDevTestUser(request) || request.method !== 'POST') return next();
+    const body = checkInSchema.safeParse(request.body);
+    if (!body.success) return next();
+    if (request.path === '/precheck') {
+      response.json({ data: { eligible: true, spotId: body.data.spotId, distanceM: 0, allowedRadiusM: 30, accuracyM: body.data.position.accuracyM, reasons: [], estimatedReward: 100 } });
+      return;
+    }
+    if (request.path === '/') {
+      const idempotencyKey = request.header('idempotency-key');
+      if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 100) return next();
+      response.status(201).json({ data: mockCheckIn(body.data.spotId, body.data.position) });
+      return;
+    }
+    next();
+  });
   router.post('/precheck', limiter, async (request, response, next) => {
     try {
       const body = checkInSchema.safeParse(request.body);

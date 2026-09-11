@@ -35,6 +35,7 @@ export interface LedgerHistoryItem {
 
 export interface UserReadRepository {
   findProfile(userId: string): Promise<UserProfile | null>;
+  ensureActiveProfile(userId: string, nickname: string): Promise<UserProfile | null>;
   updateNickname(userId: string, nickname: string): Promise<UserProfile | null>;
   listCheckIns(userId: string, after: HistoryCursor | undefined, limit: number): Promise<CheckInHistoryItem[]>;
   listPointLedger(userId: string, after: HistoryCursor | undefined, limit: number): Promise<LedgerHistoryItem[]>;
@@ -69,6 +70,16 @@ export class PostgresUserReadRepository implements UserReadRepository {
   async findProfile(userId: string): Promise<UserProfile | null> {
     const result = await this.pool.query<ProfileRow>(`${PROFILE_SQL} where p.id = $1`, [userId]);
     return result.rows[0] ? mapProfile(result.rows[0]) : null;
+  }
+
+  async ensureActiveProfile(userId: string, nickname: string): Promise<UserProfile | null> {
+    await this.pool.query(
+      `insert into public.profiles (id, nickname, status)
+       values ($1, $2, 'ACTIVE')
+       on conflict (id) do update set status = 'ACTIVE', nickname = excluded.nickname`,
+      [userId, nickname],
+    );
+    return this.findProfile(userId);
   }
 
   async updateNickname(userId: string, nickname: string): Promise<UserProfile | null> {

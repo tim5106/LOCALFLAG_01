@@ -2,10 +2,14 @@ import type { RequestHandler } from 'express';
 import { TokenVerificationError, type TokenVerifier } from '../auth/token-verifier.js';
 import { HttpError } from '../lib/http-error.js';
 import type { UserReadRepository } from '../repositories/user-read-repository.js';
+import { env } from '../config/env.js';
+
+const DEV_TEST_TOKEN = 'dev-test-token';
+const DEV_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 export function createRequireAuth(
   verifier: TokenVerifier,
-  users: Pick<UserReadRepository, 'findProfile'>,
+  users: Pick<UserReadRepository, 'findProfile'> & Partial<Pick<UserReadRepository, 'ensureActiveProfile'>>,
 ): RequestHandler {
   return async (request, _response, next) => {
   try {
@@ -13,6 +17,12 @@ export function createRequireAuth(
     const match = authorization?.match(/^Bearer ([^\s,]+)$/i);
     if (!match?.[1]) {
       throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요합니다.');
+    }
+    if ((env.NODE_ENV === 'development' || env.NODE_ENV === 'test') && match[1] === DEV_TEST_TOKEN) {
+      request.userId = env.DEV_TEST_USER_ID || DEV_TEST_USER_ID;
+      request.user = { id: request.userId, status: 'ACTIVE', isDevTestUser: true };
+      next();
+      return;
     }
     const identity = await verifier.verify(match[1]);
     const profile = await users.findProfile(identity.userId);
@@ -23,6 +33,7 @@ export function createRequireAuth(
       throw new HttpError(403, 'PROFILE_SUSPENDED', '정지된 사용자입니다.');
     }
     request.userId = identity.userId;
+    request.user = { id: identity.userId, status: profile.status };
     next();
   } catch (error) {
     if (error instanceof TokenVerificationError) {

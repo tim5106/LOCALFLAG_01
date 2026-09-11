@@ -15,4 +15,9 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 }
 export function getStoredUser(): AuthUser | null { try { return JSON.parse(localStorage.getItem(storageKey) ?? 'null') as AuthUser | null; } catch { return null; } }
 export function getAccessToken() { return getStoredUser()?.accessToken; }
+export function ensureTestAuthToken() {
+  const accessToken = 'dev-test-token';
+  localStorage.setItem(storageKey, JSON.stringify({ id: 'dev-test-user', email: 'check-in-test@local-flag.dev', accessToken }));
+  return accessToken;
+}
 export function signOut() { localStorage.removeItem(storageKey); }

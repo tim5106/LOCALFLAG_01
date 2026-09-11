@@ -9,8 +9,8 @@ interface Props { position: Coordinates | null; spots?: Spot[]; selectedSpot?: S
 export type MarkerStatus = 'LOCKED' | 'AVAILABLE' | 'PENDING' | 'COMPLETED';
 
 export function getSpotCoordinates(spot: Spot) { const raw = spot as Spot & { lat?: number | string; lng?: number | string; mapy?: number | string; mapx?: number | string }; const lat = Number(raw.location?.lat ?? raw.lat ?? raw.mapy); const lng = Number(raw.location?.lng ?? raw.lng ?? raw.mapx); return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null; }
-export function getSpotMarkerStatus(spot: Spot, distance: number, radius = CHECK_IN_RADIUS_METERS): MarkerStatus { if (spot.geometryType === 'AREA' || spot.geometryType === 'EXCLUDE') return 'LOCKED'; if (spot.checkInCompleted === true) return 'COMPLETED'; if (spot.reviewStatus === 'PENDING' || spot.reviewStatus === 'REVIEWING') return 'PENDING'; return spot.checkInEnabled !== false && distance <= radius ? 'AVAILABLE' : 'LOCKED'; }
-export function getCheckInRadius(spot?: Pick<Spot, 'checkInRadiusM'> | null) { return spot?.checkInRadiusM ?? CHECK_IN_RADIUS_METERS; }
+export function getSpotMarkerStatus(spot: Spot, distance: number, _radius = CHECK_IN_RADIUS_METERS): MarkerStatus { if (spot.geometryType === 'AREA' || spot.geometryType === 'EXCLUDE') return 'LOCKED'; if (spot.checkInCompleted === true) return 'COMPLETED'; if (spot.reviewStatus === 'PENDING' || spot.reviewStatus === 'REVIEWING') return 'PENDING'; return spot.checkInEnabled !== false && distance <= CHECK_IN_RADIUS_METERS ? 'AVAILABLE' : 'LOCKED'; }
+export function getCheckInRadius(_spot?: Pick<Spot, 'checkInRadiusM'> | null) { return CHECK_IN_RADIUS_METERS; }
 export function canSelectSpot(spot: Spot, position: Coordinates | null) { const coordinates = getSpotCoordinates(spot); const distance = coordinates && position ? calculateDistanceMeters(position.lat, position.lng, coordinates.lat, coordinates.lng) : Infinity; return getSpotMarkerStatus(spot, distance, getCheckInRadius(spot)) === 'AVAILABLE'; }
 export function getSpotClickResult(spot: Spot, position: Coordinates | null): 'SELECT' | 'OUT_OF_RANGE' { return canSelectSpot(spot, position) ? 'SELECT' : 'OUT_OF_RANGE'; }
 export function getCheckInCircleOptions(center: unknown, radius: number) { return { center, radius, strokeWeight: 2, strokeColor: '#2563EB', strokeOpacity: .7, fillColor: '#60A5FA', fillOpacity: .15 }; }
@@ -25,7 +25,7 @@ export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMap
     if (state !== 'ready' || !position || !window.kakao || !mapRef.current) return;
 
     const point = new window.kakao.maps.LatLng(position.lat, position.lng);
-    const radius = getCheckInRadius(selectedSpot);
+    const radius = CHECK_IN_RADIUS_METERS;
     mapRef.current.setCenter(point);
 
     if (userOverlayRef.current) userOverlayRef.current.setPosition(point);
@@ -42,7 +42,7 @@ export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMap
       circleRef.current?.setMap(null);
       circleRef.current = null;
     };
-  }, [position, selectedSpot?.checkInRadiusM, state]);
+  }, [position, state]);
   useEffect(() => { if (state !== 'ready' || !window.kakao || !mapRef.current) return; const activeIds = new Set<string>(); spots.forEach((spot) => { const coordinates = getSpotCoordinates(spot); if (spot.geometryType === 'EXCLUDE' || !coordinates) return; const key = String(spot.id); activeIds.add(key); const distance = position ? calculateDistanceMeters(position.lat, position.lng, coordinates.lat, coordinates.lng) : Infinity; const status = getSpotMarkerStatus(spot, distance, spot.checkInRadiusM ?? CHECK_IN_RADIUS_METERS); const badgeText = `${status === 'COMPLETED' ? '✅' : status === 'AVAILABLE' ? '🟢' : status === 'PENDING' ? '⏳' : '🔒'} ${spot.title}${status === 'PENDING' ? ' (심사중...)' : ''}`; const content = `<div class="tourism-badge tourism-badge--${status.toLowerCase()}" onclick="event.stopPropagation(); window.__handleSpotClick('${spot.id}');" style="cursor:pointer;pointer-events:auto;position:relative;z-index:9999;">${badgeText}</div>`; const existing = overlaysRef.current.get(key); if (existing) { existing.setPosition(new window.kakao.maps.LatLng(coordinates.lat, coordinates.lng)); existing.setContent(content); } else overlaysRef.current.set(key, new window.kakao.maps.CustomOverlay({ map: mapRef.current, position: new window.kakao.maps.LatLng(coordinates.lat, coordinates.lng), content, yAnchor: 1, clickable: true })); }); overlaysRef.current.forEach((overlay, key) => { if (!activeIds.has(key)) { overlay.setMap(null); overlaysRef.current.delete(key); } }); }, [spots, position, selectedSpot, state]);
   useEffect(() => { if (state !== 'ready' || !onMapClick || !window.kakao || !mapRef.current) return; const handler = (event: any) => onMapClick(event.latLng.getLat(), event.latLng.getLng()); window.kakao.maps.event.addListener(mapRef.current, 'click', handler); return () => window.kakao?.maps?.event?.removeListener(mapRef.current, 'click', handler); }, [state, onMapClick]);
   useEffect(() => { if (state === 'ready') { mapRef.current?.setDraggable(false); mapRef.current?.setZoomable(true); } }, [state]);

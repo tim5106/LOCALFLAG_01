@@ -38,7 +38,8 @@ export async function getSpots(query: SpotQuery = {}, signal?: AbortSignal): Pro
   const params = toQueryString({ limit: 20, ...query });
   let response: Response;
   try {
-    response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal });
+    const accessToken = getAccessToken();
+    response = await fetch(`${webEnv.apiBaseUrl}/spots?${params}`, { signal, headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
     return fallbackSpots(query);
