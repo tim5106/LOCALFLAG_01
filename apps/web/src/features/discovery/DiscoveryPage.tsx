@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ListFilter, Map, Search, Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { getSpots } from '../../api/client';
+import { useMe } from '../../hooks/useMe';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotCard } from '../../components/SpotCard';
 import { SpotDetail } from '../../components/SpotDetail';
@@ -18,6 +19,7 @@ export function DiscoveryPage() {
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(discoveryFilters.query);
   const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
+  const meQuery = useMe();
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', discoveryFilters, mapViewport],
     placeholderData: (previous) => previous,
@@ -56,7 +58,7 @@ export function DiscoveryPage() {
           <p className="eyebrow"><Sparkles size={15} /> 오늘의 로컬 발견</p>
           <h1>사람들보다 먼저<br />숨은 장소를 발견해보세요</h1>
         </div>
-        <div className="hero__balance"><small>보유 포인트</small><strong>1,250P</strong></div>
+        <div className="hero__balance"><small>보유 포인트</small><strong>{meQuery.isPending ? '...' : `${meQuery.profile?.pointBalance ?? 0}P`}</strong></div>
       </header>
 
       <form className="search-row" onSubmit={submitSearch} role="search">

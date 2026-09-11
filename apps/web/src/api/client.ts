@@ -18,6 +18,7 @@ export interface SpotQuery {
   cursor?: string;
   limit?: number;
 }
+export interface MeProfile { id: string; nickname?: string | null; pointBalance?: number; equippedFlagSkinId?: string | null; }
 
 export const prototypeSpots: Spot[] = [
   { id: 100001, title: '보성 대한다원 전망대', address: '전라남도 보성군', contentTypeId: 12, grade: 'A', isDecliningArea: true, estimatedReward: 250, imageUrl: null, status: 'ACTIVE', location: { lat: 34.9671, lng: 127.1694 } },
@@ -87,7 +88,21 @@ export async function createCheckIn(spotId: number | string, position: PositionI
   return body as CheckInResponse<CheckInResult>;
 }
 
-export async function getMe() { return authorizedGet('/me'); }
+export async function getMe(): Promise<{ data: MeProfile }> { return authorizedGet('/me') as Promise<{ data: MeProfile }>; }
 export async function getPointLedger() { return authorizedGet('/me/point-ledger'); }
 export async function getFlagSkins() { return authorizedGet('/flag-skins'); }
+export async function getMyMap() { return authorizedGet('/me/map'); }
+export async function purchaseFlagSkin(skinId: string) {
+  return authorizedRequest(`/flag-skins/${encodeURIComponent(skinId)}/purchase`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() } });
+}
+export async function equipFlagSkin(skinId: string) {
+  return authorizedRequest('/me/equipped-flag-skin', { method: 'PUT', body: JSON.stringify({ skinId }) });
+}
 async function authorizedGet(path: string) { const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { headers: { ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) } }); const body = await response.json() as unknown; if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody); return body; }
+async function authorizedRequest(path: string, init: RequestInit = {}) {
+  const accessToken = getAccessToken();
+  const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) } });
+  const body = await response.json() as unknown;
+  if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody);
+  return body;
+}
