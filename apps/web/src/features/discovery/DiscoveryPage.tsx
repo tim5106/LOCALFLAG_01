@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, CircleUserRound, Flag, Sprout } from 'lucide-react';
+import { ArrowRight, CircleUserRound, Flag, Search, Sprout } from 'lucide-react';
 import { useState } from 'react';
 import { getMyMap, getSpots, type MyFlagMap } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
@@ -63,10 +63,16 @@ export function DiscoveryPage() {
         </div>
       </header>
 
-      <section className="discovery-count" aria-label="플래그 수집 현황" aria-busy={mapQuery.isPending || spotsQuery.isPending}>
-        <strong>{visitedCount === null ? '--' : String(visitedCount).padStart(2, '0')}</strong>{' '}
-        <span>/ {totalCount === null ? '--' : totalCount.toLocaleString()} 플래그</span>
-      </section>
+      <div className="discovery-toolbar">
+        <section className="discovery-count" aria-label="플래그 수집 현황" aria-busy={mapQuery.isPending || spotsQuery.isPending}>
+          <strong>{visitedCount === null ? '--' : String(visitedCount).padStart(2, '0')}</strong>{' '}
+          <span>/ {totalCount === null ? '--' : totalCount.toLocaleString()} 플래그</span>
+        </section>
+        <div className="discovery-search" role="search">
+          <Search size={18} aria-hidden="true" />
+          <input type="search" aria-label="장소 검색" placeholder="Search..." disabled />
+        </div>
+      </div>
       {accountMessage && <p className="discovery-account-state" role="alert">{accountMessage}</p>}
 
       <section className="discovery-map-stage" aria-label="플래그 탐색 지도">

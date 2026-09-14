@@ -347,6 +347,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 .discovery-profile { color: #fff; }
 .discovery-count { gap: 10px; min-height: 68px; margin: 8px 0 4px; align-items: center; }
+.discovery-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.discovery-toolbar .discovery-count { flex: 1 1 auto; min-width: 0; }
+.discovery-search { display: flex; flex: 0 0 140px; align-items: center; gap: 8px; height: 34px; padding: 0 13px; border-radius: 999px; background: #efefed; color: #56615d; }
+.discovery-search input { width: 100%; min-width: 0; padding: 0; border: 0; outline: 0; background: transparent; color: #56615d; font-family: Inter, sans-serif; font-size: 16px; line-height: 20px; }
+.discovery-search input::placeholder { color: #666b69; opacity: 1; }
+.discovery-search input:disabled { cursor: default; -webkit-text-fill-color: #666b69; opacity: 1; }
 .discovery-count strong { color: #c8553d; font-family: Inter, sans-serif; font-size: 40px; font-weight: 800; line-height: 40px; letter-spacing: 0; }
 .discovery-count span { padding-top: 17px; color: #718079; font-family: Inter, sans-serif; font-size: 16px; font-weight: 500; line-height: 18.75px; }
 .discovery-map-stage { position: relative; flex: 1 1 461px; min-height: 360px; max-height: 525px; margin: 0; }
@@ -419,6 +425,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   .discovery-page { padding-inline: 14px; }
   .discovery-header { margin-inline: -14px; padding-inline: 14px; }
   .discovery-map-stage { min-height: 330px; }
+  .discovery-toolbar { gap: 7px; }
+  .discovery-count { gap: 6px; }
+  .discovery-count strong { font-size: 34px; line-height: 36px; }
+  .discovery-count span { padding-top: 13px; font-size: 13px; white-space: nowrap; }
+  .discovery-search { flex-basis: 112px; height: 32px; padding-inline: 10px; gap: 6px; }
+  .discovery-search input { font-size: 14px; }
   .discovery-selected-card { grid-template-columns: 40px minmax(0, 1fr) auto; padding: 11px; gap: 9px; }
   .discovery-selected-card__icon { width: 40px; height: 40px; }
   .discovery-selected-card__body strong { font-size: 13px; }

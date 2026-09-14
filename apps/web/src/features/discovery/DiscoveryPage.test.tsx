@@ -55,7 +55,9 @@ describe('DiscoveryPage redesigned home', () => {
     await waitFor(() => expect(screen.getByLabelText('플래그 수집 현황').textContent).toContain('07 / 89 플래그'));
     expect(screen.getByText('1,250 P')).toBeTruthy();
     expect(screen.getByRole('button', { name: '현장 인증하기' })).toBeTruthy();
-    expect(screen.queryByRole('search')).toBeNull();
+    const search = screen.getByRole('searchbox', { name: '장소 검색' }) as HTMLInputElement;
+    expect(search.placeholder).toBe('Search...');
+    expect(search.disabled).toBe(true);
   });
 
   it('shows the distance after the user shares their current location', async () => {
