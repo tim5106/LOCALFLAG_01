@@ -9,11 +9,14 @@ import { useUiStore } from '../../store/ui-store';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
 import { calculateDistanceMeters, formatDistance } from '../check-in/distance';
+import { DiscoverySearchPage } from './DiscoverySearchPage';
 
 export function DiscoveryPage() {
   const selectedSpot = useUiStore((store) => store.selectedSpot);
   const setActiveTab = useUiStore((store) => store.setActiveTab);
   const setSelectedSpot = useUiStore((store) => store.setSelectedSpot);
+  const discoveryView = useUiStore((store) => store.discoveryView);
+  const setDiscoveryView = useUiStore((store) => store.setDiscoveryView);
   const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
   const [userLocation, setUserLocation] = useState<Spot['location'] | null>(null);
   const meQuery = useMe();
@@ -34,6 +37,7 @@ export function DiscoveryPage() {
   const checkInAvailable = Boolean(activeSpot && activeSpot.geometryType === 'POINT' && activeSpot.checkInEnabled !== false);
 
   if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
+  if (discoveryView === 'list') return <DiscoverySearchPage onBack={() => setDiscoveryView('map')} />;
 
   const startCheckIn = () => {
     if (!activeSpot || !checkInAvailable) return;
@@ -68,10 +72,15 @@ export function DiscoveryPage() {
           <strong>{visitedCount === null ? '--' : String(visitedCount).padStart(2, '0')}</strong>{' '}
           <span>/ {totalCount === null ? '--' : totalCount.toLocaleString()} 플래그</span>
         </section>
-        <div className="discovery-search" role="search">
+        <button
+          type="button"
+          className="discovery-search"
+          aria-label="장소 검색"
+          onClick={() => setDiscoveryView('list')}
+        >
           <Search size={18} aria-hidden="true" />
-          <input type="search" aria-label="장소 검색" placeholder="Search..." disabled />
-        </div>
+          <span>Search...</span>
+        </button>
       </div>
       {accountMessage && <p className="discovery-account-state" role="alert">{accountMessage}</p>}
 
