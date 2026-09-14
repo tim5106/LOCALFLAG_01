@@ -11,4 +11,29 @@ describe('ui store', () => {
     store.setDiscoveryFilters({ grades: [], decliningArea: false });
     store.setMapViewport({ minLat: 33, minLng: 124, maxLat: 39, maxLng: 132 });
   });
+
+  it('manages profile open/close and my-flag navigation', () => {
+    const store = useUiStore.getState();
+    store.openProfile('discovery');
+    expect(useUiStore.getState().profileOpen).toBe(true);
+    expect(useUiStore.getState().profileOrigin).toBe('discovery');
+
+    store.closeProfile();
+    expect(useUiStore.getState().profileOpen).toBe(false);
+
+    store.openProfile('my-flag');
+    expect(useUiStore.getState().profileOrigin).toBe('my-flag');
+
+    store.navigateToMyFlagSection('skins');
+    expect(useUiStore.getState().activeTab).toBe('my-flag');
+    expect(useUiStore.getState().profileOpen).toBe(false);
+    expect(useUiStore.getState().myFlagTarget).toBe('skins');
+
+    store.clearMyFlagTarget();
+    expect(useUiStore.getState().myFlagTarget).toBeNull();
+
+    store.openProfile('discovery');
+    store.setActiveTab('check-in');
+    expect(useUiStore.getState().profileOpen).toBe(false);
+  });
 });

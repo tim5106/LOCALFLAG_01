@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Camera, Check, Compass, Flag, Info, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { equipFlagSkin, getFlagSkins, getMe, getMyMap, purchaseFlagSkin } from '../../api/client';
 import { useUiStore } from '../../store/ui-store';
 
@@ -12,7 +12,22 @@ type MyMap = { equippedFlagSkinId: string | null; visits: Visit[] };
 export function MyFlagPage() {
   const queryClient = useQueryClient();
   const setActiveTab = useUiStore((state) => state.setActiveTab);
+  const openProfile = useUiStore((state) => state.openProfile);
+  const myFlagTarget = useUiStore((state) => state.myFlagTarget);
+  const clearMyFlagTarget = useUiStore((state) => state.clearMyFlagTarget);
   const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    if (!myFlagTarget) return;
+    if (myFlagTarget === 'photolog') {
+      const el = document.getElementById('photolog-heading');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    } else if (myFlagTarget === 'skins') {
+      const el = document.getElementById('skins-heading');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }
+    clearMyFlagTarget();
+  }, [myFlagTarget, clearMyFlagTarget]);
 
   const profileQuery = useQuery({ queryKey: ['me'], queryFn: getMe, retry: false });
   const skinsQuery = useQuery({ queryKey: ['flag-skins'], queryFn: getFlagSkins, retry: false });
@@ -97,7 +112,12 @@ export function MyFlagPage() {
         <div className="my-flag-header__brand">
           <h1>Local Flag</h1>
         </div>
-        <div className="my-flag-header__profile" aria-label="내 프로필">
+        <button
+          type="button"
+          className="my-flag-header__profile"
+          aria-label="내 프로필"
+          onClick={() => openProfile('my-flag')}
+        >
           <div className="my-flag-header__avatar">
             <svg width="18" height="18" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -106,7 +126,7 @@ export function MyFlagPage() {
               />
             </svg>
           </div>
-        </div>
+        </button>
       </header>
 
       {hasError && (

@@ -47,7 +47,7 @@ function successResponse(input: RequestInfo | URL) {
 describe('DiscoveryPage redesigned home', () => {
   afterEach(cleanup);
   beforeEach(() => {
-    useUiStore.setState({ activeTab: 'discovery', discoveryView: 'map', selectedSpot: null, mapViewport: null });
+    useUiStore.setState({ activeTab: 'discovery', discoveryView: 'map', selectedSpot: null, mapViewport: null, profileOpen: false, profileOrigin: 'discovery', myFlagTarget: null });
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => successResponse(input)));
   });
 
@@ -96,14 +96,15 @@ describe('DiscoveryPage redesigned home', () => {
     expect(screen.getByRole('status').textContent).toContain('현재 위치를 확인했어요.');
   });
 
-  it('keeps the selected place when moving to check-in and links the profile to My Flag', async () => {
+  it('keeps the selected place when moving to check-in and opens profile', async () => {
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
     fireEvent.click(screen.getByRole('button', { name: '현장 인증하기' }));
     expect(useUiStore.getState()).toMatchObject({ activeTab: 'check-in', selectedSpot: spot });
     useUiStore.getState().setActiveTab('discovery');
-    fireEvent.click(screen.getByRole('button', { name: '마이 플래그로 이동' }));
-    expect(useUiStore.getState().activeTab).toBe('my-flag');
+    fireEvent.click(screen.getByRole('button', { name: '내 프로필' }));
+    expect(useUiStore.getState().profileOpen).toBe(true);
+    expect(useUiStore.getState().profileOrigin).toBe('discovery');
   });
 
   it('does not present failed account queries as zero values', async () => {
