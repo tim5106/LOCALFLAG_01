@@ -9,6 +9,7 @@ import type { ReviewRepository } from './repositories/review-repository.js';
 import type { UserReadRepository } from './repositories/user-read-repository.js';
 
 const spots: SpotReadRepository = {
+  count: vi.fn(),
   list: vi.fn().mockResolvedValue([]), findVisibleById: vi.fn().mockResolvedValue(null),
   recommendations: vi.fn().mockResolvedValue([]), nearby: vi.fn().mockResolvedValue([]),
 };

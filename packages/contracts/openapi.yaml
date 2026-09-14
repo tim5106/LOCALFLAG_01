@@ -94,7 +94,7 @@ paths:
           description: 추천 장소 목록
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/SpotListResponse' }
+              schema: { $ref: '#/components/schemas/PaginatedSpotListResponse' }
         '400': { $ref: '#/components/responses/BadRequest' }
 
   /spots/nearby:
@@ -639,11 +639,26 @@ components:
           items: { $ref: '#/components/schemas/Spot' }
         meta:
           type: object
+          required: [nextCursor, hasNext, total]
+          properties:
+            nextCursor: { type: [string, 'null'] }
+            hasNext: { type: boolean }
+            total: { type: integer, minimum: 0, description: cursor와 limit을 제외한 전체 일치 장소 수 }
+
+    PaginatedSpotListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Spot' }
+        meta:
+          type: object
           required: [nextCursor, hasNext]
           properties:
             nextCursor: { type: [string, 'null'] }
             hasNext: { type: boolean }
-
+            policyVersion: { type: string }
     NearbySpot:
       allOf:
         - { $ref: '#/components/schemas/Spot' }

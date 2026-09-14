@@ -10,6 +10,7 @@ import { RECOMMENDATION_V1 } from '../domain/recommendation.js';
 import { SUPPORTED_CONTENT_TYPE_IDS, type SpotGrade, type SupportedContentTypeId } from '../domain/tourism.js';
 import { CursorError, decodeCursor, encodeCursor } from '../lib/cursor.js';
 import { HttpError } from '../lib/http-error.js';
+import { isDevTestRequest } from '../lib/dev-test-auth.js';
 import type { SpotListFilters, SpotReadRepository } from '../repositories/spot-read-repository.js';
 import type { SpotReadModel } from '../domain/public-spot.js';
 
@@ -77,7 +78,7 @@ export async function loadFallbackSpots(): Promise<SpotReadModel[]> {
   return fallbackSpotsPromise;
 }
 
-async function listDevelopmentFallback(filters: SpotListFilters): Promise<SpotReadModel[]> {
+async function filterDevelopmentFallback(filters: SpotListFilters): Promise<SpotReadModel[]> {
   const spots = await loadFallbackSpots();
   return spots.filter((spot) => (
     (filters.minLat === undefined || spot.lat >= filters.minLat)
@@ -91,7 +92,15 @@ async function listDevelopmentFallback(filters: SpotListFilters): Promise<SpotRe
     && (filters.areaCode === undefined || filters.areaCode === spot.areaCode)
     && (filters.sigunguCode === undefined || filters.sigunguCode === 23)
     && (filters.afterId === undefined || spot.id > filters.afterId)
-  )).slice(0, filters.limit);
+  ));
+}
+
+async function listDevelopmentFallback(filters: SpotListFilters): Promise<SpotReadModel[]> {
+  return (await filterDevelopmentFallback(filters)).slice(0, filters.limit);
+}
+
+async function countDevelopmentFallback(filters: SpotListFilters): Promise<number> {
+  return (await filterDevelopmentFallback({ ...filters, afterId: undefined })).length;
 }
 
 const listQuerySchema = z.object({
@@ -154,9 +163,6 @@ function mapCursorError(error: unknown): unknown {
     : error;
 }
 
-function isDevTestRequest(request: Request): boolean {
-  return request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
-}
 
 export function createSpotsRouter(repository: SpotReadRepository, requireAuth: RequestHandler): Router {
   const router = Router();
@@ -179,22 +185,27 @@ export function createSpotsRouter(repository: SpotReadRepository, requireAuth: R
         afterId: after?.id, limit: query.data.limit + 1,
       };
       let rows: SpotReadModel[];
+      let total: number;
       if (isDevTestRequest(request)) {
-        rows = await listDevelopmentFallback(filters);
+        [rows, total] = await Promise.all([
+          listDevelopmentFallback(filters), countDevelopmentFallback(filters),
+        ]);
       } else try {
-        rows = await repository.list(filters);
+        [rows, total] = await Promise.all([repository.list(filters), repository.count(filters)]);
       } catch (error) {
         if (process.env.NODE_ENV === 'production') throw error;
         console.warn('[spots-fallback] PostgreSQL unavailable; serving Jongno MVP JSON fallback.', {
           traceId: request.traceId,
           error,
         });
-        rows = await listDevelopmentFallback(filters);
+        [rows, total] = await Promise.all([
+          listDevelopmentFallback(filters), countDevelopmentFallback(filters),
+        ]);
       }
       const hasNext = rows.length > query.data.limit;
       const page = rows.slice(0, query.data.limit);
       response.json({ data: page.map(toPublicSpot), meta: {
-        nextCursor: hasNext && page.at(-1) ? encodeCursor({ id: page.at(-1)!.id }) : null, hasNext,
+        nextCursor: hasNext && page.at(-1) ? encodeCursor({ id: page.at(-1)!.id }) : null, hasNext, total,
       } });
     } catch (error) { next(mapCursorError(error)); }
   });

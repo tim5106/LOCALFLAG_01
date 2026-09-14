@@ -1,6 +1,7 @@
 import { Router, type Request, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { HttpError } from '../lib/http-error.js';
+import { isDevTestRequest } from '../lib/dev-test-auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { FlagRuleError, type FlagRepository } from '../repositories/flag-repository.js';
 
@@ -9,9 +10,6 @@ const DEV_SKINS = [
   { id: 'explorer', name: 'Explorer', description: '탐험가 플래그 스킨', price: 800, assetUrl: '/assets/flags/explorer.svg', owned: false, equipped: false },
 ];
 
-function isDevTestRequest(request: Request): boolean {
-  return request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
-}
 
 function userId(request: Express.Request): string {
   if (!request.userId) throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요합니다.');

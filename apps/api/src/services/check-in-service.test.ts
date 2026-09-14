@@ -13,6 +13,7 @@ const nationalMeteorologicalMuseum: SpotReadModel = {
   geometryType: 'POINT', checkInEnabled: true, checkInRadiusM: 100,
 };
 const spots: SpotReadRepository = {
+  count: vi.fn(),
   list: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(),
   findVisibleById: vi.fn(),
 };

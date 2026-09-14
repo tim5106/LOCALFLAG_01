@@ -1,6 +1,7 @@
 export interface ApiMeta {
   nextCursor: string | null;
   hasNext: boolean;
+  total?: number;
   source?: 'api' | 'fallback' | 'prototype' | 'tour-api';
   areaCode?: string;
   sigunguCode?: string;

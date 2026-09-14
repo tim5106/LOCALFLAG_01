@@ -29,6 +29,7 @@ export interface NearbySpot extends SpotReadModel { distanceM: number }
 
 export interface SpotReadRepository {
   list(filters: SpotListFilters): Promise<SpotReadModel[]>;
+  count(filters: SpotListFilters): Promise<number>;
   findVisibleById(spotId: number): Promise<SpotReadModel | null>;
   recommendations(query: RecommendationQuery): Promise<RankedSpot[]>;
   nearby(query: { lat: number; lng: number; radiusM: number; limit: number }): Promise<NearbySpot[]>;
@@ -122,6 +123,35 @@ export class PostgresSpotReadRepository implements SpotReadRepository {
     }
   }
 
+  async count(filters: SpotListFilters): Promise<number> {
+    const values: unknown[] = [];
+    const where = [`s.status in ('ACTIVE', 'SCHEDULED')`];
+    const bind = (value: unknown) => { values.push(value); return `$${values.length}`; };
+
+    if (filters.minLat !== undefined && filters.minLng !== undefined
+      && filters.maxLat !== undefined && filters.maxLng !== undefined) {
+      const minLng = bind(filters.minLng);
+      const minLat = bind(filters.minLat);
+      const maxLng = bind(filters.maxLng);
+      const maxLat = bind(filters.maxLat);
+      where.push(`extensions.st_intersects(
+        s.location,
+        extensions.st_makeenvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326)::extensions.geography
+      )`);
+    }
+    if (filters.contentTypeIds?.length) where.push(`s.content_type_id = any(${bind(filters.contentTypeIds)}::smallint[])`);
+    if (filters.grades?.length) where.push(`sc.grade = any(${bind(filters.grades)}::char(1)[])`);
+    if (filters.decliningArea !== undefined) where.push(`s.is_declining_area = ${bind(filters.decliningArea)}`);
+    if (filters.q) where.push(`(s.title ilike ${bind(`%${filters.q}%`)} or s.address ilike ${bind(`%${filters.q}%`)})`);
+    if (filters.areaCode !== undefined) where.push(`s.area_code = ${bind(filters.areaCode)}`);
+    if (filters.sigunguCode !== undefined) where.push(`s.sigungu_code = ${bind(filters.sigunguCode)}`);
+
+    const result = await this.pool.query<{ total: number | string }>(
+      `select count(*)::float8 as total ${SPOT_FROM} where ${where.join(' and ')}`,
+      values,
+    );
+    return Number(result.rows[0]?.total ?? 0);
+  }
   async findVisibleById(spotId: number): Promise<SpotReadModel | null> {
     const result = await this.pool.query<SpotRow>(
       `select ${SPOT_COLUMNS} ${SPOT_FROM} where s.content_id = $1 and s.status in ('ACTIVE', 'SCHEDULED') limit 1`,

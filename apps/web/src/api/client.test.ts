@@ -24,6 +24,7 @@ describe('spot API client', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network')));
     const result = await getSpots({ grades: ['S'] });
     expect(result.meta.source).toBe('fallback');
+    expect(result.meta.total).toBe(1);
     expect(result.data.every((spot) => spot.grade === 'S')).toBe(true);
   });
 
@@ -35,5 +36,23 @@ describe('spot API client', () => {
   it('preserves typed 501 errors from precheck', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { code: 'CHECK_IN_PERSISTENCE_NOT_IMPLEMENTED', message: 'not ready' } }), { status: 501 })));
     await expect(precheckSpot(123, { lat: 37.58, lng: 126.98, accuracyM: 5, capturedAt: new Date().toISOString() })).rejects.toMatchObject({ status: 501, isNotImplemented: true });
+  });
+  it('keeps the public spots request unauthenticated', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [], meta: { nextCursor: null, hasNext: false, total: 0 } }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await getSpots({ areaCode: '1', sigunguCode: '23' });
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/spots?'), { signal: undefined });
+  });
+
+  it('applies region, bounding box, and cursor filters to fallback totals and pages', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network')));
+    const outsideRegion = await getSpots({ areaCode: '32', sigunguCode: '1' });
+    expect(outsideRegion).toMatchObject({ data: [], meta: { total: 0 } });
+    const outsideBounds = await getSpots({ areaCode: '1', sigunguCode: '23', minLat: 38, minLng: 127, maxLat: 39, maxLng: 128 });
+    expect(outsideBounds.meta.total).toBe(0);
+    const secondPage = await getSpots({ areaCode: '1', sigunguCode: '23', cursor: '100001', limit: 1 });
+    expect(secondPage.meta.total).toBe(3);
+    expect(secondPage.data[0]?.id).toBe(100002);
+    expect(secondPage.meta.hasNext).toBe(true);
   });
 });

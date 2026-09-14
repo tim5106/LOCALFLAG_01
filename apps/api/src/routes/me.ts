@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Request, type RequestHandler, type Resp
 import { z } from 'zod';
 import { CursorError, decodeCursor, encodeCursor } from '../lib/cursor.js';
 import { HttpError } from '../lib/http-error.js';
+import { isDevTestRequest } from '../lib/dev-test-auth.js';
 import type { HistoryCursor, UserReadRepository } from '../repositories/user-read-repository.js';
 import { FlagRuleError, type FlagRepository } from '../repositories/flag-repository.js';
 
@@ -12,9 +13,6 @@ const DEV_PROFILE = {
 const DEV_LEDGER: Array<never> = [];
 const DEV_MAP = { equippedFlagSkinId: 'default-red', visits: [] };
 
-function isDevTestRequest(request: Request): boolean {
-  return request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
-}
 
 const historyQuery = z.object({
   cursor: z.string().min(1).optional(),

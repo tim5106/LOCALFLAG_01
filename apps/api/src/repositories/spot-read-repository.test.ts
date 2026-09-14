@@ -33,6 +33,21 @@ describe('PostgresSpotReadRepository', () => {
     expect(String(query.mock.calls[0]?.[0])).toContain('s.check_in_radius_m');
   });
 
+  it('counts all matching visible spots without cursor or limit pagination', async () => {
+    const { query, subject } = repository();
+    query.mockResolvedValueOnce({ rows: [{ total: '89' }] });
+    const total = await subject.count({
+      minLat: 37, minLng: 126, maxLat: 38, maxLng: 128,
+      contentTypeIds: [12], grades: ['A'], decliningArea: true, q: 'forest',
+      areaCode: 1, sigunguCode: 23, afterId: 10, limit: 1,
+    });
+    const sql = String(query.mock.calls[0]?.[0]);
+    expect(total).toBe(89);
+    expect(sql).toContain("s.status in ('ACTIVE', 'SCHEDULED')");
+    expect(sql).toContain('extensions.st_intersects');
+    expect(sql).not.toContain('s.content_id >');
+    expect(sql).not.toContain('limit');
+  });
   it('uses isolated V1 recommendation weights and deterministic ordering', async () => {
     const { query, subject } = repository();
     await subject.recommendations({ after: { rank: 180, id: 7 }, limit: 21, policy: RECOMMENDATION_V1 });
