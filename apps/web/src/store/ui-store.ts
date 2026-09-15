@@ -20,14 +20,14 @@ interface UiState {
   selectedSpot: Spot | null;
   mapViewport: MapViewport | null;
   profileOpen: boolean;
-  profileOrigin: 'discovery' | 'my-flag';
+  profileOrigin: 'discovery' | 'my-flag' | 'check-in';
   myFlagTarget: 'photolog' | 'skins' | null;
   setActiveTab: (tab: AppTab) => void;
   setDiscoveryView: (view: DiscoveryView) => void;
   setDiscoveryFilters: (filters: Partial<DiscoveryFilters>) => void;
   setSelectedSpot: (spot: Spot | null) => void;
   setMapViewport: (viewport: MapViewport) => void;
-  openProfile: (origin: 'discovery' | 'my-flag') => void;
+  openProfile: (origin: 'discovery' | 'my-flag' | 'check-in') => void;
   closeProfile: () => void;
   navigateToMyFlagSection: (target: 'photolog' | 'skins') => void;
   clearMyFlagTarget: () => void;
