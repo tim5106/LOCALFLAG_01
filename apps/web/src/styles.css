@@ -2334,22 +2334,6 @@ button.discovery-search {
   line-height: 24px;
 }
 
-/* Kakao Map Stage */
-.check-in-map-stage {
-  position: relative;
-  width: 100%;
-  height: 390px;
-  overflow: hidden;
-  background: #dbe8d7;
-}
-
-.check-in-map-stage .check-in-map {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  border-radius: 0;
-}
-
 /* Radar / Explore View */
 .check-in-radar-container {
   position: relative;
