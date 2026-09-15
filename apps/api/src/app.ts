@@ -12,8 +12,16 @@ export function createApp(dependencies: ApiRouterDependencies) {
 
   app.disable('x-powered-by');
   if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
-  app.use(helmet());
-  app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  const allowedOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    credentials: true,
+  }));
   app.use(requestContext);
   app.use(requestLogger);
   app.use(express.json({ limit: '64kb', strict: true }));
