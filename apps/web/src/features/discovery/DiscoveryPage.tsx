@@ -55,8 +55,7 @@ export function DiscoveryPage() {
     <main className="page discovery-page">
       <header className="discovery-header">
         <div className="discovery-brand">
-          <img src="/local-flag.svg" alt="" />
-          <strong>Local Flag</strong>
+          <h1>Local Flag</h1>
         </div>
         <div className="discovery-header__actions">
           <strong className="discovery-balance" aria-label="보유 포인트">

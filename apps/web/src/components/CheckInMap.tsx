@@ -1,3 +1,4 @@
+import { Navigation } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { webEnv } from '../config/env';
 import type { Spot } from '../types/spot';
@@ -5,7 +6,7 @@ import { calculateDistanceMeters, CHECK_IN_RADIUS_METERS } from '../features/che
 
 declare global { interface Window { kakao?: any; __handleSpotClick?: (spotId: string) => void; } }
 interface Coordinates { lat: number; lng: number; accuracy?: number | null; }
-interface Props { position: Coordinates | null; spots?: Spot[]; selectedSpot?: Spot | null; onSelect?: (spot: Spot) => void; onMapClick?: (lat: number, lng: number) => void; }
+interface Props { position: Coordinates | null; spots?: Spot[]; selectedSpot?: Spot | null; onSelect?: (spot: Spot) => void; onMapClick?: (lat: number, lng: number) => void; onLocate?: () => void; }
 export type MarkerStatus = 'LOCKED' | 'AVAILABLE' | 'PENDING' | 'COMPLETED';
 
 export function getSpotCoordinates(spot: Spot) { const raw = spot as Spot & { lat?: number | string; lng?: number | string; mapy?: number | string; mapx?: number | string }; const lat = Number(raw.location?.lat ?? raw.lat ?? raw.mapy); const lng = Number(raw.location?.lng ?? raw.lng ?? raw.mapx); return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null; }
@@ -15,7 +16,7 @@ export function canSelectSpot(spot: Spot, position: Coordinates | null) { const 
 export function getSpotClickResult(spot: Spot, position: Coordinates | null): 'SELECT' | 'OUT_OF_RANGE' { return canSelectSpot(spot, position) ? 'SELECT' : 'OUT_OF_RANGE'; }
 export function getCheckInCircleOptions(center: unknown, radius: number) { return { center, radius, strokeWeight: 2, strokeColor: '#2563EB', strokeOpacity: .7, fillColor: '#60A5FA', fillOpacity: .15 }; }
 
-export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMapClick }: Props) {
+export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMapClick, onLocate }: Props) {
   const mapElement = useRef<HTMLDivElement>(null); const mapRef = useRef<any>(null); const userOverlayRef = useRef<any>(null); const circleRef = useRef<any>(null); const overlaysRef = useRef<Map<string, any>>(new Map()); const spotsRef = useRef<Spot[]>(spots); const positionRef = useRef(position); const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect; spotsRef.current = spots; positionRef.current = position;
   const [state, setState] = useState<'loading' | 'ready' | 'fallback' | 'error'>(webEnv.kakaoMapAppKey ? 'loading' : 'fallback');
   const [rangeNotice, setRangeNotice] = useState('');
@@ -67,7 +68,39 @@ export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMap
     };
     return () => { delete window.__handleSpotClick; };
   }, []);
-  const moveToCurrentLocation = () => { if (position && mapRef.current && window.kakao) mapRef.current.setCenter(new window.kakao.maps.LatLng(position.lat, position.lng)); };
-  const changeZoom = (delta: number) => { if (!mapRef.current || !window.kakao) return; mapRef.current.setLevel(Math.max(1, Math.min(14, mapRef.current.getLevel() + delta)), { animate: true }); if (position) mapRef.current.setCenter(new window.kakao.maps.LatLng(position.lat, position.lng)); };
-  return <section className="check-in-map" aria-label="현재 위치 지도"><div ref={mapElement} className="check-in-map__canvas" />{state !== 'ready' && <div className="check-in-map__fallback">{state === 'loading' ? '지도를 불러오는 중입니다.' : state === 'error' ? '지도 키를 확인해주세요.' : 'Kakao 지도 키 설정 후 현재 위치 지도가 표시됩니다.'}</div>}{rangeNotice && <div className="check-in-map__range-notice" role="status" aria-live="polite">{rangeNotice}</div>}<div className="check-in-map__zoom-controls"><button type="button" aria-label="지도 확대" onClick={() => changeZoom(-1)}>+</button><button type="button" aria-label="지도 축소" onClick={() => changeZoom(1)}>−</button></div></section>;
+  const moveToCurrentLocation = () => {
+    if (position && mapRef.current && window.kakao) {
+      mapRef.current.setCenter(new window.kakao.maps.LatLng(position.lat, position.lng));
+    }
+  };
+  return (
+    <section className="check-in-map" aria-label="현재 위치 지도">
+      <div ref={mapElement} className="check-in-map__canvas" />
+      {state !== 'ready' && (
+        <div className="check-in-map__fallback">
+          {state === 'loading'
+            ? '지도를 불러오는 중입니다.'
+            : state === 'error'
+            ? '지도 키를 확인해주세요.'
+            : 'Kakao 지도 키 설정 후 현재 위치 지도가 표시됩니다.'}
+        </div>
+      )}
+      {rangeNotice && (
+        <div className="check-in-map__range-notice" role="status" aria-live="polite">
+          {rangeNotice}
+        </div>
+      )}
+      <button
+        type="button"
+        className="map-preview__locate"
+        aria-label="현재 위치로 이동"
+        onClick={() => {
+          moveToCurrentLocation();
+          onLocate?.();
+        }}
+      >
+        <Navigation size={19} />
+      </button>
+    </section>
+  );
 }
