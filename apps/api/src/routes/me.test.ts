@@ -11,6 +11,7 @@ import type { UserReadRepository } from '../repositories/user-read-repository.js
 const userId = '00000000-0000-0000-0000-000000000001';
 const auth: RequestHandler = (req, _res, next) => { req.userId = userId; next(); };
 const spots: SpotReadRepository = {
+  count: vi.fn(),
   list: vi.fn(), findVisibleById: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(),
 };
 const users: UserReadRepository = {

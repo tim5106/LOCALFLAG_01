@@ -3,8 +3,8 @@ import { TokenVerificationError, type TokenVerifier } from '../auth/token-verifi
 import { HttpError } from '../lib/http-error.js';
 import type { UserReadRepository } from '../repositories/user-read-repository.js';
 import { env } from '../config/env.js';
+import { isDevTestTokenForEnvironment } from '../lib/dev-test-auth.js';
 
-const DEV_TEST_TOKEN = 'dev-test-token';
 const DEV_TEST_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 export function createRequireAuth(
@@ -18,7 +18,7 @@ export function createRequireAuth(
     if (!match?.[1]) {
       throw new HttpError(401, 'UNAUTHORIZED', '로그인이 필요합니다.');
     }
-    if (match[1] === DEV_TEST_TOKEN) {
+    if (isDevTestTokenForEnvironment(match[1], env.NODE_ENV)) {
       const testUserId = env.DEV_TEST_USER_ID || DEV_TEST_USER_ID;
       request.userId = testUserId;
       request.user = { id: testUserId, status: 'ACTIVE', isDevTestUser: true };

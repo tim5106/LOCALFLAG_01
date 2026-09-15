@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { CheckInRuleError } from '../domain/check-in.js';
 import { distanceInMeters } from '../domain/geo.js';
 import { HttpError } from '../lib/http-error.js';
+import { isDevTestRequest } from '../lib/dev-test-auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 import { CheckInService } from '../services/check-in-service.js';
 import { loadFallbackSpots } from './spots.js';
@@ -36,8 +37,7 @@ function mapError(error: unknown): unknown {
 }
 
 function isDevTestUser(request: Request) {
-  return request.user?.isDevTestUser === true
-    || request.header('authorization')?.toLowerCase().includes('dev-test-token') === true;
+  return request.user?.isDevTestUser === true;
 }
 
 function mockCheckIn(spotId: number, position: z.infer<typeof positionSchema>) {
@@ -74,7 +74,7 @@ export function createCheckInsRouter(requireAuth: RequestHandler, service: Check
     if (!body.success) return next();
     if (request.path === '/precheck') {
       const result = await mockPrecheck(body.data.spotId, body.data.position);
-      if (!result && request.header('authorization')?.toLowerCase().includes('dev-test-token')) {
+      if (!result && isDevTestRequest(request)) {
         response.status(404).json({ error: { code: 'SPOT_NOT_FOUND', message: '체크인 가능한 장소를 찾을 수 없습니다.' } }); return;
       }
       if (!result) {
@@ -88,7 +88,7 @@ export function createCheckInsRouter(requireAuth: RequestHandler, service: Check
       const idempotencyKey = request.header('idempotency-key');
       if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 100) return next();
       const result = await mockPrecheck(body.data.spotId, body.data.position);
-      if (!result && request.header('authorization')?.toLowerCase().includes('dev-test-token')) {
+      if (!result && isDevTestRequest(request)) {
         response.status(404).json({ error: { code: 'SPOT_NOT_FOUND', message: '체크인 가능한 장소를 찾을 수 없습니다.' } }); return;
       }
       if (!result) { response.status(201).json({ data: mockCheckIn(body.data.spotId, body.data.position) }); return; }

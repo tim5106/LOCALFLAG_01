@@ -13,6 +13,7 @@ const userId = '00000000-0000-0000-0000-000000000001';
 const auth: RequestHandler = (req, _res, next) => { req.userId = userId; next(); };
 const devAuth: RequestHandler = (req, _res, next) => { req.userId = userId; req.user = { id: userId, status: 'ACTIVE', isDevTestUser: true }; next(); };
 const spots: SpotReadRepository = {
+  count: vi.fn(),
   list: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(), findVisibleById: vi.fn(),
 };
 const users: UserReadRepository = {

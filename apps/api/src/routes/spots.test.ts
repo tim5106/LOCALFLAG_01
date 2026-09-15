@@ -17,7 +17,7 @@ const fixture: SpotReadModel = {
   geometryType: 'POINT', checkInEnabled: true, checkInRadiusM: 100,
 };
 const spots: SpotReadRepository = {
-  list: vi.fn(), findVisibleById: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(),
+  list: vi.fn(), count: vi.fn(), findVisibleById: vi.fn(), recommendations: vi.fn(), nearby: vi.fn(),
 };
 const users: UserReadRepository = {
   findProfile: vi.fn(), updateNickname: vi.fn(), listCheckIns: vi.fn(), listPointLedger: vi.fn(),
@@ -32,6 +32,7 @@ function app(auth: RequestHandler = authenticated) { return createApp({ spots, u
 describe('spot routes', () => {
   beforeEach(() => {
     vi.mocked(spots.list).mockReset().mockResolvedValue([]);
+    vi.mocked(spots.count).mockReset().mockResolvedValue(0);
     vi.mocked(spots.findVisibleById).mockReset().mockResolvedValue(null);
     vi.mocked(spots.recommendations).mockReset().mockResolvedValue([]);
     vi.mocked(spots.nearby).mockReset().mockResolvedValue([]);
@@ -77,6 +78,18 @@ describe('spot routes', () => {
     expect(malformed.body.error.code).toBe('INVALID_CURSOR');
   });
 
+  it('returns the total matching spot count independently of the page size', async () => {
+    vi.mocked(spots.list).mockResolvedValue([fixture, { ...fixture, id: 11 }]);
+    vi.mocked(spots.count).mockResolvedValue(89);
+    const response = await request(app()).get('/api/v1/spots?areaCode=1&sigunguCode=23&limit=1').expect(200);
+    expect(response.body.meta).toMatchObject({ hasNext: true, total: 89 });
+  });
+  it('returns fallback total before pagination for development requests', async () => {
+    const response = await request(app()).get('/api/v1/spots?areaCode=1&sigunguCode=23&limit=1')
+      .set('Authorization', 'Bearer dev-test-token').expect(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.meta.total).toBeGreaterThan(1);
+  });
   it('returns visible repository detail and hides missing/invisible records as 404', async () => {
     vi.mocked(spots.findVisibleById).mockResolvedValueOnce(fixture).mockResolvedValueOnce(null);
     await request(app()).get('/api/v1/spots/10').expect(200).expect(({ body }) => expect(body.data.id).toBe(10));
