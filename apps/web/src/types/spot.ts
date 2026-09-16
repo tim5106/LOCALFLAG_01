@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-export type SpotGrade = 'S' | 'A' | 'B' | 'C';
-export type CheckInStatus = 'LOCKED' | 'AVAILABLE' | 'PENDING' | 'COMPLETED';
-=======
 export type SpotGrade = 'S' | 'A' | 'B' | 'C' | 'UNRATED';
-export type SpotGeometryType = 'POINT' | 'AREA';
->>>>>>> 44fc6bb (feat(web): add tourist map state UI)
+export type SpotGeometryType = 'POINT' | 'AREA' | 'EXCLUDE';
+export type CheckInStatus = 'LOCKED' | 'AVAILABLE' | 'PENDING' | 'COMPLETED';
 
 export interface Spot {
   id: number;
@@ -16,25 +12,18 @@ export interface Spot {
   isDecliningArea: boolean;
   estimatedReward?: number;
   imageUrl: string | null;
-<<<<<<< HEAD
+  thumbnailUrl?: string | null;
   rewardEligible?: boolean;
   seasonPin?: boolean;
   infoOnly?: boolean;
-  geometryType?: 'POINT' | 'AREA' | 'EXCLUDE';
+  geometryType?: SpotGeometryType;
   checkInEnabled?: boolean;
   checkInCompleted?: boolean;
   checkInRadiusM?: number;
+  visited?: boolean;
   reviewStatus?: string;
   reviewNote?: string;
   status: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
-=======
-  thumbnailUrl?: string | null;
-  status?: 'SCHEDULED' | 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
-  geometryType?: SpotGeometryType;
-  checkInEnabled?: boolean;
-  checkInRadiusM?: number;
-  visited?: boolean;
->>>>>>> 44fc6bb (feat(web): add tourist map state UI)
   location: {
     lat: number;
     lng: number;
