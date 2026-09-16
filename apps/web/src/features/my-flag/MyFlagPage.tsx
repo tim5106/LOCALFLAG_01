@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Camera, Check, CircleUserRound, Compass, Flag, Info, RefreshCw } from 'lucide-react';
+import { Camera, Check, CircleUserRound, Compass, Flag, Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { equipFlagSkin, getFlagSkins, getMe, getMyMap, purchaseFlagSkin } from '../../api/client';
 import { useUiStore } from '../../store/ui-store';
+import { MyFlagSkeleton } from './MyFlagSkeleton';
+
 
 type Profile = { nickname?: string | null; pointBalance?: number; equippedFlagSkinId?: string | null };
 type Skin = { id: string; name?: string; description?: string; price?: number; owned?: boolean; equipped?: boolean; isEquipped?: boolean };
@@ -72,19 +74,7 @@ export function MyFlagPage() {
   };
 
   if (isLoading) {
-    return (
-      <main className="my-flag-page">
-        <header className="my-flag-header">
-          <div className="my-flag-header__brand">
-            <h1>Local Flag</h1>
-          </div>
-        </header>
-        <div className="my-flag-status-card" role="status">
-          <RefreshCw className="spin" size={20} />
-          <span>마이 플래그 정보를 불러오는 중입니다.</span>
-        </div>
-      </main>
-    );
+    return <MyFlagSkeleton />;
   }
 
   if (hasError && !profile) {
