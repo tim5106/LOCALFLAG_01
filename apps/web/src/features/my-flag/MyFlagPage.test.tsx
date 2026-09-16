@@ -232,6 +232,14 @@ describe('MyFlagPage collection dashboard', () => {
     expect(screen.getByText('0 / 0')).toBeTruthy();
   });
 
+  it('renders skeleton UI during loading state', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+
+    renderPage();
+
+    expect(screen.getByTestId('my-flag-skeleton')).toBeTruthy();
+  });
+
   it('renders loading and error states', async () => {
     // 1. Error state (profile error)
     vi.stubGlobal('fetch', vi.fn(async () => {
