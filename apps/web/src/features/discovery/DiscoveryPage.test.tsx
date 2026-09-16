@@ -61,13 +61,15 @@ describe('DiscoveryPage redesigned home', () => {
     expect(searchButton.textContent).toContain('Search...');
   });
 
-  it('navigates to DiscoverySearchPage on clicking search bar and returns to map on back button', async () => {
+  it('opens the search content in a modal sheet while keeping the map mounted', async () => {
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
     const searchButton = screen.getByRole('button', { name: '장소 검색' });
     fireEvent.click(searchButton);
 
-    expect(useUiStore.getState().discoveryView).toBe('list');
+    expect(useUiStore.getState().discoveryView).toBe('search');
+    expect(screen.getByRole('dialog', { name: '장소 검색' })).toBeTruthy();
+    expect(screen.getByLabelText('플래그 탐색 지도')).toBeTruthy();
     expect(await screen.findByText('어디로 떠나볼까요?')).toBeTruthy();
     expect(screen.getByText('인기 탐험 도시')).toBeTruthy();
     expect(screen.getByText('이번 주 추천 플래그 TOP 5')).toBeTruthy();
@@ -80,8 +82,42 @@ describe('DiscoveryPage redesigned home', () => {
     const backButton = screen.getByRole('button', { name: '지도 홈으로 돌아가기' });
     fireEvent.click(backButton);
 
-    expect(useUiStore.getState().discoveryView).toBe('map');
+    await waitFor(() => expect(useUiStore.getState().discoveryView).toBe('map'));
     expect(await screen.findByRole('button', { name: '현장 인증하기' })).toBeTruthy();
+  });
+
+  it('closes the search sheet from the backdrop and Escape and restores focus', async () => {
+    renderPage();
+    await screen.findAllByText(spot.title);
+    const searchButton = screen.getByRole('button', { name: '장소 검색' });
+
+    fireEvent.click(searchButton);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: '지도 홈으로 돌아가기' })));
+    fireEvent.click(screen.getByTestId('discovery-search-backdrop'));
+    await waitFor(() => expect(useUiStore.getState().discoveryView).toBe('map'));
+    expect(document.activeElement).toBe(searchButton);
+
+    fireEvent.click(searchButton);
+    fireEvent.keyDown(screen.getByRole('dialog', { name: '장소 검색' }), { key: 'Escape' });
+    await waitFor(() => expect(useUiStore.getState().discoveryView).toBe('map'));
+    expect(document.activeElement).toBe(searchButton);
+  });
+
+  it('closes only when the sheet handle is dragged far enough', async () => {
+    renderPage();
+    await screen.findAllByText(spot.title);
+    fireEvent.click(screen.getByRole('button', { name: '장소 검색' }));
+    const handle = screen.getByRole('button', { name: '검색창 닫기' });
+
+    fireEvent.pointerDown(handle, { pointerId: 1, clientY: 100 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientY: 150 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientY: 150 });
+    expect(useUiStore.getState().discoveryView).toBe('search');
+
+    fireEvent.pointerDown(handle, { pointerId: 2, clientY: 100 });
+    fireEvent.pointerMove(handle, { pointerId: 2, clientY: 260 });
+    fireEvent.pointerUp(handle, { pointerId: 2, clientY: 260 });
+    await waitFor(() => expect(useUiStore.getState().discoveryView).toBe('map'));
   });
 
   it('shows the distance after the user shares their current location', async () => {
@@ -142,7 +178,7 @@ describe('DiscoveryPage redesigned home', () => {
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
 
     fireEvent.click(screen.getByRole('button', { name: '장소 검색' }));
-    expect(useUiStore.getState().discoveryView).toBe('list');
+    expect(useUiStore.getState().discoveryView).toBe('search');
     expect(await screen.findByText('어디로 떠나볼까요?')).toBeTruthy();
 
     const discoveryTab = screen.getByRole('button', { name: '탐색' });
@@ -152,14 +188,14 @@ describe('DiscoveryPage redesigned home', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '마이 플래그' }));
     expect(useUiStore.getState().activeTab).toBe('my-flag');
-    useUiStore.setState({ discoveryView: 'list' });
+    useUiStore.setState({ discoveryView: 'search' });
     fireEvent.click(screen.getByRole('button', { name: '탐색' }));
     expect(useUiStore.getState().activeTab).toBe('discovery');
     expect(useUiStore.getState().discoveryView).toBe('map');
   });
 
   it('renders loading, error, and empty states in DiscoverySearchPage', async () => {
-    useUiStore.setState({ activeTab: 'discovery', discoveryView: 'list' });
+    useUiStore.setState({ activeTab: 'discovery', discoveryView: 'search' });
 
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);
@@ -168,7 +204,7 @@ describe('DiscoveryPage redesigned home', () => {
     });
     const errorClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const { unmount: unmountError } = render(<QueryClientProvider client={errorClient}><DiscoveryPage /></QueryClientProvider>);
-    expect((await screen.findByRole('alert')).textContent).toContain('스팟 목록을 불러오지 못했어요.');
+    expect(await screen.findByText(/스팟 목록을 불러오지 못했어요/)).toBeTruthy();
     unmountError();
 
     vi.mocked(fetch).mockImplementation(async (input) => {
@@ -182,7 +218,7 @@ describe('DiscoveryPage redesigned home', () => {
   });
 
   it('ensures unimplemented controls are disabled or non-interactive for accessibility', async () => {
-    useUiStore.setState({ activeTab: 'discovery', discoveryView: 'list' });
+    useUiStore.setState({ activeTab: 'discovery', discoveryView: 'search' });
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
 

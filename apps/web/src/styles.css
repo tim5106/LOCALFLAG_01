@@ -1026,6 +1026,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 @media (min-width: 600px) {
+  .discovery-search-overlay { top: 28px; bottom: 28px; height: auto; max-height: 900px; }
+  .discovery-search-sheet { border-radius: 28px; }
   .app-frame { max-height: 923px; }
   .discovery-page { min-height: 923px; }
 }
@@ -1061,8 +1063,69 @@ button.discovery-search {
 }
 
 /* Discovery Search Page */
+.discovery-search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  width: min(100%, 480px);
+  height: 100dvh;
+  margin: auto;
+  pointer-events: none;
+}
+.discovery-search-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(0, 24, 18, .42);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  cursor: pointer;
+}
+.discovery-search-sheet {
+  --sheet-drag-offset: 0px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  height: 90%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 28px 28px 0 0;
+  background: #F7F4EC;
+  box-shadow: 0 -18px 48px rgba(0, 41, 32, .2);
+  transform: translateY(calc(100% + var(--sheet-drag-offset)));
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+.discovery-search-overlay--visible { pointer-events: auto; }
+.discovery-search-overlay--visible .discovery-search-backdrop { opacity: 1; }
+.discovery-search-overlay--visible .discovery-search-sheet { transform: translateY(var(--sheet-drag-offset)); }
+.discovery-search-sheet--dragging { transition: none; }
+.discovery-search-sheet__handle {
+  flex: 0 0 28px;
+  display: grid;
+  width: 100%;
+  min-height: 28px;
+  padding: 8px 0 6px;
+  place-items: center;
+  border: 0;
+  background: #F7F4EC;
+  cursor: grab;
+  touch-action: none;
+}
+.discovery-search-sheet__handle:active { cursor: grabbing; }
+.discovery-search-sheet__handle span { width: 42px; height: 4px; border-radius: 999px; background: #B7B9B2; }
+.discovery-search-sheet__content { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.discovery-search-sheet__content::-webkit-scrollbar { display: none; }
+
 .discovery-search-page {
-  min-height: 100vh;
+  min-height: 100%;
   background: #F7F4EC;
   color: #183B33;
 }
@@ -1738,7 +1801,8 @@ button.discovery-search {
 .profile-header__back-btn {
   width: 40px;
   height: 40px;
-  border-radius: 20px;
+  aspect-ratio: 1;
+  border-radius: 50%;
   background: #FFFFFF;
   border: 1px solid rgba(222, 217, 205, 0.8);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
