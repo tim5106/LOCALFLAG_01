@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, CircleUserRound, Flag, Search, Sprout } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { getMyMap, getSpots, type MyFlagMap } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotDetail } from '../../components/SpotDetail';
@@ -9,7 +9,7 @@ import { useUiStore } from '../../store/ui-store';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
 import { calculateDistanceMeters, formatDistance } from '../check-in/distance';
-import { DiscoverySearchPage } from './DiscoverySearchPage';
+import { DiscoverySearchSheet } from './DiscoverySearchSheet';
 
 export function DiscoveryPage() {
   const selectedSpot = useUiStore((store) => store.selectedSpot);
@@ -20,6 +20,7 @@ export function DiscoveryPage() {
   const setDiscoveryView = useUiStore((store) => store.setDiscoveryView);
   const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
   const [userLocation, setUserLocation] = useState<Spot['location'] | null>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
   const meQuery = useMe();
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', { areaCode: '1', sigunguCode: '23' }],
@@ -38,7 +39,11 @@ export function DiscoveryPage() {
   const checkInAvailable = Boolean(activeSpot && activeSpot.geometryType === 'POINT' && activeSpot.checkInEnabled !== false);
 
   if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
-  if (discoveryView === 'list') return <DiscoverySearchPage onBack={() => setDiscoveryView('map')} />;
+  const isSearchOpen = discoveryView === 'search';
+  const closeSearch = () => {
+    setDiscoveryView('map');
+    searchButtonRef.current?.focus();
+  };
 
   const startCheckIn = () => {
     if (!activeSpot || !checkInAvailable) return;
@@ -55,8 +60,7 @@ export function DiscoveryPage() {
     <main className="page discovery-page">
       <header className="discovery-header">
         <div className="discovery-brand">
-          <img src="/local-flag.svg" alt="" />
-          <strong>Local Flag</strong>
+          <h1>Local Flag</h1>
         </div>
         <div className="discovery-header__actions">
           <strong className="discovery-balance" aria-label="보유 포인트">
@@ -77,7 +81,8 @@ export function DiscoveryPage() {
           type="button"
           className="discovery-search"
           aria-label="장소 검색"
-          onClick={() => setDiscoveryView('list')}
+          ref={searchButtonRef}
+          onClick={() => setDiscoveryView('search')}
         >
           <Search size={18} aria-hidden="true" />
           <span>Search...</span>
@@ -125,6 +130,7 @@ export function DiscoveryPage() {
           {!checkInAvailable && <p id="check-in-unavailable" className="discovery-check-in-note">이 장소는 현장 인증을 지원하지 않아요.</p>}
         </div>
       )}
+      <DiscoverySearchSheet open={isSearchOpen} onClose={closeSearch} />
     </main>
   );
 }

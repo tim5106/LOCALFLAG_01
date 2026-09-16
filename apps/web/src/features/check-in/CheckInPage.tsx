@@ -1,4 +1,4 @@
-import { Check, Crosshair, RefreshCw } from 'lucide-react';
+import { Check, CircleUserRound, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createCheckIn, getNearbySpots, getSpots, precheckSpot, type PositionInput } from '../../api/client';
@@ -10,12 +10,14 @@ import { calculateDistanceMeters, CHECK_IN_RADIUS_METERS, formatDistance } from 
 import type { CheckInResult as ApiCheckInResult, PrecheckResult } from './api-types';
 import { SpotImage } from '../../components/SpotImage';
 import { CheckInMap } from '../../components/CheckInMap';
+import { useMe } from '../../hooks/useMe';
 
 type LocationState = 'idle' | 'requesting' | 'measured' | 'denied' | 'inaccurate' | 'out-of-range' | 'unsupported';
 type CheckInModal = { status: 'success' | 'pending' | 'failure'; points?: number; message: string };
 
 export function CheckInPage() {
   const queryClient = useQueryClient();
+  const meQuery = useMe();
   const openProfile = useUiStore((store) => store.openProfile);
   const storedSelectedSpot = useUiStore((store) => store.selectedSpot);
   const eligibleStoredSpot =
@@ -197,19 +199,19 @@ export function CheckInPage() {
         <div className="check-in-nav-header__brand">
           <h1>Local Flag</h1>
         </div>
-        <button
-          type="button"
-          className="check-in-nav-header__avatar"
-          aria-label="내 프로필"
-          onClick={() => openProfile('check-in')}
-        >
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M16 16C15.175 16 14.4688 15.7063 13.8812 15.1188C13.2937 14.5312 13 13.825 13 13C13 12.175 13.2937 11.4688 13.8812 10.8813C14.4688 10.2938 15.175 10 16 10C16.825 10 17.5312 10.2938 18.1187 10.8813C18.7062 11.4688 19 12.175 19 13C19 13.825 18.7062 14.5312 18.1187 15.1188C17.5312 15.7063 16.825 16 16 16ZM10 22V19.9C10 19.475 10.1094 19.0844 10.3281 18.7281C10.5469 18.3719 10.8375 18.1 11.2 17.9125C11.975 17.525 12.7625 17.2344 13.5625 17.0406C14.3625 16.8469 15.175 16.75 16 16.75C16.825 16.75 17.6375 16.8469 18.4375 17.0406C19.2375 17.2344 20.025 17.525 20.8 17.9125C21.1625 18.1 21.4531 18.3719 21.6719 18.7281C21.8906 19.0844 22 19.475 22 19.9V22H10ZM11.5 20.5H20.5V19.9C20.5 19.7625 20.4656 19.6375 20.3969 19.525C20.3281 19.4125 20.2375 19.325 20.125 19.2625C19.45 18.925 18.7688 18.6719 18.0813 18.5031C17.3938 18.3344 16.7 18.25 16 18.25C15.3 18.25 14.6062 18.3344 13.9188 18.5031C13.2313 18.6719 12.55 18.925 11.875 19.2625C11.7625 19.325 11.6719 19.4125 11.6031 19.525C11.5344 19.6375 11.5 19.7625 11.5 19.9V20.5ZM16 14.5C16.4125 14.5 16.7656 14.3531 17.0594 14.0594C17.3531 13.7656 17.5 13.4125 17.5 13C17.5 12.5875 17.3531 12.2344 17.0594 11.9406C16.7656 11.6469 16.4125 11.5 16 11.5C15.5875 11.5 15.2344 11.6469 14.9406 11.9406C14.6469 12.2344 14.5 12.5875 14.5 13C14.5 13.4125 14.6469 13.7656 14.9406 14.0594Z"
-              fill="white"
-            />
-          </svg>
-        </button>
+        <div className="discovery-header__actions">
+          <strong className="discovery-balance" aria-label="보유 포인트">
+            {meQuery.isPending ? '— P' : meQuery.isError ? '확인 불가' : `${(meQuery.profile?.pointBalance ?? 0).toLocaleString()} P`}
+          </strong>
+          <button
+            type="button"
+            className="discovery-profile"
+            aria-label="내 프로필"
+            onClick={() => openProfile('check-in')}
+          >
+            <CircleUserRound size={20} />
+          </button>
+        </div>
       </header>
 
       {/* 서브 헤더 (위치 칩 + 타이틀) */}
@@ -237,23 +239,8 @@ export function CheckInPage() {
             setPrecheck(null);
             setMessage('');
           }}
+          onLocate={requestLocation}
         />
-
-        {/* 우측 하단 크로스헤어 / 현재 위치 재측정 버튼 오버레이 */}
-        <button
-          type="button"
-          className="check-in-radar-locate-btn"
-          style={{ zIndex: 10 }}
-          onClick={requestLocation}
-          disabled={loading || state === 'requesting'}
-          aria-label="현재 위치 다시 측정"
-        >
-          {state === 'requesting' ? (
-            <RefreshCw size={20} className="spin" />
-          ) : (
-            <Crosshair size={20} />
-          )}
-        </button>
       </section>
 
       {/* 하단 장소 카드 및 인증 액션 */}

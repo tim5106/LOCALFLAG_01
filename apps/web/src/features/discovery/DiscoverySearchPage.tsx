@@ -5,9 +5,11 @@ import { SpotImage } from '../../components/SpotImage';
 import { useMe } from '../../hooks/useMe';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
+import type { Ref } from 'react';
 
 interface DiscoverySearchPageProps {
-  onBack: () => void;
+  onClose: () => void;
+  closeButtonRef?: Ref<HTMLButtonElement>;
 }
 
 interface PopularCity {
@@ -27,7 +29,7 @@ const POPULAR_CITIES: PopularCity[] = [
   { name: '강릉', subtitle: '초당 · 안목', flagCount: 14 },
 ];
 
-export function DiscoverySearchPage({ onBack }: DiscoverySearchPageProps) {
+export function DiscoverySearchPage({ onClose, closeButtonRef }: DiscoverySearchPageProps) {
   const meQuery = useMe();
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', { areaCode: '1', sigunguCode: '23' }],
@@ -52,7 +54,8 @@ export function DiscoverySearchPage({ onBack }: DiscoverySearchPageProps) {
             type="button"
             className="search-page-back"
             aria-label="지도 홈으로 돌아가기"
-            onClick={onBack}
+            ref={closeButtonRef}
+            onClick={onClose}
           >
             <ArrowLeft size={22} />
           </button>

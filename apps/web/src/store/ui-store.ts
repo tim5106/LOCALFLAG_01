@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Spot } from '../types/spot';
 
 export type AppTab = 'discovery' | 'check-in' | 'my-flag';
-export type DiscoveryView = 'map' | 'list';
+export type DiscoveryView = 'map' | 'search';
 
 export interface DiscoveryFilters {
   query: string;
