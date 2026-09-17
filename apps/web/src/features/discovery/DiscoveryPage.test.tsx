@@ -51,17 +51,29 @@ describe('DiscoveryPage redesigned home', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => successResponse(input)));
   });
 
-  it('renders account progress and the active place in the map-first layout', async () => {
+  it('renders account progress and hides the place card until selected', async () => {
     renderPage();
-    await screen.findAllByText('북촌 쪽염색 공방 화연당');
     await waitFor(() => expect(screen.getByLabelText('플래그 수집 현황').textContent).toContain('07 / 89 플래그'));
     expect(screen.getByText('1,250 P')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '현장 인증하기' })).toBeNull();
+    expect(screen.queryByText('북촌 쪽염색 공방 화연당')).toBeNull();
+
+    // Selecting a spot reveals the floating card and check-in button
+    useUiStore.getState().setSelectedSpot(spot);
+    expect(await screen.findByText('북촌 쪽염색 공방 화연당')).toBeTruthy();
     expect(screen.getByRole('button', { name: '현장 인증하기' })).toBeTruthy();
+
+    // Clicking close dismisses the selection
+    fireEvent.click(screen.getByRole('button', { name: '장소 선택 해제' }));
+    expect(useUiStore.getState().selectedSpot).toBeNull();
+    expect(screen.queryByText('북촌 쪽염색 공방 화연당')).toBeNull();
+
     const searchButton = screen.getByRole('button', { name: '장소 검색' });
     expect(searchButton.textContent).toContain('Search...');
   });
 
   it('opens the search content in a modal sheet while keeping the map mounted', async () => {
+    useUiStore.getState().setSelectedSpot(spot);
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
     const searchButton = screen.getByRole('button', { name: '장소 검색' });
@@ -87,6 +99,7 @@ describe('DiscoveryPage redesigned home', () => {
   });
 
   it('closes the search sheet from the backdrop and Escape and restores focus', async () => {
+    useUiStore.getState().setSelectedSpot(spot);
     renderPage();
     await screen.findAllByText(spot.title);
     const searchButton = screen.getByRole('button', { name: '장소 검색' });
@@ -104,6 +117,7 @@ describe('DiscoveryPage redesigned home', () => {
   });
 
   it('closes only when the sheet handle is dragged far enough', async () => {
+    useUiStore.getState().setSelectedSpot(spot);
     renderPage();
     await screen.findAllByText(spot.title);
     fireEvent.click(screen.getByRole('button', { name: '장소 검색' }));
@@ -125,6 +139,7 @@ describe('DiscoveryPage redesigned home', () => {
       configurable: true,
       value: { getCurrentPosition: vi.fn((success) => success({ coords: { latitude: 37.58, longitude: 126.98 } })) },
     });
+    useUiStore.getState().setSelectedSpot(spot);
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
     fireEvent.click(screen.getByRole('button', { name: '현재 위치로 이동' }));
@@ -133,6 +148,7 @@ describe('DiscoveryPage redesigned home', () => {
   });
 
   it('keeps the selected place when moving to check-in and opens profile', async () => {
+    useUiStore.getState().setSelectedSpot(spot);
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
     fireEvent.click(screen.getByRole('button', { name: '현장 인증하기' }));
@@ -150,7 +166,7 @@ describe('DiscoveryPage redesigned home', () => {
       return successResponse(input);
     });
     renderPage();
-    await screen.findAllByText('북촌 쪽염색 공방 화연당');
+    await waitFor(() => expect(screen.getByLabelText('플래그 탐색 지도')).toBeTruthy());
     await screen.findByText(/포인트 정보를 확인할 수 없어요/);
     expect(screen.getByLabelText('보유 포인트').textContent).toBe('확인 불가');
     expect(screen.getByLabelText('플래그 수집 현황').textContent).toContain('-- / 89 플래그');
@@ -158,6 +174,7 @@ describe('DiscoveryPage redesigned home', () => {
 
   it('disables check-in for an ineligible place', async () => {
     const ineligible = { ...spot, geometryType: 'AREA' as const, checkInEnabled: false };
+    useUiStore.getState().setSelectedSpot(ineligible);
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);
       if (url.includes('/me')) return successResponse(input);
@@ -173,6 +190,7 @@ describe('DiscoveryPage redesigned home', () => {
 
   it('resets to map view when clicking bottom navigation discovery tab in App', async () => {
     await signIn('traveler@example.com', 'localflag');
+    useUiStore.getState().setSelectedSpot(spot);
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><App /></QueryClientProvider>);
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
@@ -267,11 +285,12 @@ describe('DiscoveryPage redesigned home', () => {
       return successResponse(input);
     });
 
+    useUiStore.getState().setSelectedSpot(spot);
     renderPage();
     await screen.findAllByText('북촌 쪽염색 공방 화연당');
 
-    const checkInBtn = screen.getByRole('button', { name: '현장 인증하기' }) as HTMLButtonElement;
-    expect(checkInBtn.disabled).toBe(true);
+    const checkInBtn = await screen.findByRole('button', { name: '현장 인증하기' }) as HTMLButtonElement;
+    await waitFor(() => expect(checkInBtn.disabled).toBe(true));
     expect(screen.getByText('이미 인증한 장소입니다.')).toBeTruthy();
   });
 });

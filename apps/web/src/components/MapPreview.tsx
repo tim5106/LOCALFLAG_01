@@ -2,7 +2,7 @@ import { Navigation } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as maptilersdk from '@maptiler/sdk';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
-import { webEnv } from '../config/env';
+import { getMapTilerStyleUrl, webEnv } from '../config/env';
 import { groupSpotsByLocation } from '../lib/map-preview-spots';
 import { getMapSpotState, getMapSpotStateLabel, getNearbySpotIds } from '../lib/map-spot-state';
 import { createGeoJsonCircle } from '../lib/maptiler-circle';
@@ -18,6 +18,7 @@ interface MapPreviewProps {
   visitedSpotIds?: ReadonlySet<number>;
   equippedSkinId?: string | null;
   onSelect?: (spot: Spot) => void;
+  onDeselect?: () => void;
   onViewportChange?: (viewport: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => void;
   onUserLocationChange?: (location: Spot['location']) => void;
 }
@@ -25,8 +26,13 @@ interface MapPreviewProps {
 type LocationState = 'idle' | 'locating' | 'ready' | 'unavailable';
 
 const KOREA_BOUNDS: [[number, number], [number, number]] = [
-  [123.0, 32.5], // 남서단 (서해/마라도 남쪽)
-  [133.0, 39.5], // 북동단 (독도/휴전선 북쪽)
+  [124.5, 33.0], // 남서단 (마라도 남단 33.11° 포함)
+  [131.9, 38.65], // 북동단 (고성 DMZ 38.61°, 독도 포함)
+];
+
+const PAN_BOUNDS: [[number, number], [number, number]] = [
+  [122.0, 31.0],
+  [134.0, 40.5],
 ];
 
 const CIRCLE_SOURCE_ID = 'user-check-in-circle-source';
@@ -39,6 +45,7 @@ export function MapPreview({
   visitedSpotIds = new Set<number>(),
   equippedSkinId,
   onSelect,
+  onDeselect,
   onViewportChange,
   onUserLocationChange,
 }: MapPreviewProps) {
@@ -46,6 +53,8 @@ export function MapPreview({
   const mapRef = useRef<maptilersdk.Map | null>(null);
   const markersRef = useRef<maptilersdk.Marker[]>([]);
   const userMarkerRef = useRef<maptilersdk.Marker | null>(null);
+  const onDeselectRef = useRef(onDeselect);
+  onDeselectRef.current = onDeselect;
 
   const [mapState, setMapState] = useState<'fallback' | 'loading' | 'ready' | 'error'>(
     webEnv.maptilerApiKey ? 'loading' : 'fallback'
@@ -74,15 +83,20 @@ export function MapPreview({
 
     maptilersdk.config.apiKey = webEnv.maptilerApiKey;
 
+    const KOREA_CENTER: [number, number] = [127.8, 35.85];
+    const KOREA_INITIAL_ZOOM = 5.6;
+
     let map: maptilersdk.Map | null = null;
     try {
       map = new maptilersdk.Map({
         container: mapElement.current,
-        style: webEnv.maptilerStyleId || maptilersdk.MapStyle.STREETS,
-        center: [126.98, 37.58], // [lng, lat]
-        zoom: 14,
-        maxBounds: KOREA_BOUNDS,
-        minZoom: 5.5,
+        style: getMapTilerStyleUrl(),
+        center: KOREA_CENTER,
+        zoom: KOREA_INITIAL_ZOOM,
+        maxBounds: PAN_BOUNDS,
+        minZoom: 4.5,
+        navigationControl: false,
+        geolocateControl: false,
       });
       mapRef.current = map;
     } catch (err) {
@@ -130,12 +144,22 @@ export function MapPreview({
       }
 
       setMapState('ready');
-      map?.resize();
-      requestAnimationFrame(() => map?.resize());
+      requestAnimationFrame(() => {
+        if (!map) return;
+        map.resize();
+        map.fitBounds(KOREA_BOUNDS, {
+          padding: { top: 12, bottom: 12, left: 16, right: 16 },
+          maxZoom: 6.2,
+          duration: 0,
+        });
+      });
       emitViewport();
     });
 
     map.on('moveend', emitViewport);
+    map.on('click', () => {
+      onDeselectRef.current?.();
+    });
     map.on('error', (e) => {
       console.warn('[MapPreview] MapTiler runtime notice:', e);
     });
@@ -206,7 +230,8 @@ export function MapPreview({
           content.innerHTML = group.length > 1 ? `<span>${group.length}</span>` : '<span></span>';
         }
 
-        content.addEventListener('click', () => {
+        content.addEventListener('click', (event) => {
+          event.stopPropagation();
           onSelect?.(group[selectedIndex] ?? representative);
           selectedIndex = (selectedIndex + 1) % group.length;
         });
@@ -227,6 +252,19 @@ export function MapPreview({
       markersRef.current = [];
     };
   }, [equippedSkinId, mapState, nearbySpotIds, onSelect, selectedSpot, spots, visitedSpotIds]);
+
+  // Smoothly pan camera to selected spot with offset so marker is visible above bottom card
+  useEffect(() => {
+    const map = mapRef.current;
+    if (mapState !== 'ready' || !map || !selectedSpot) return;
+
+    map.flyTo({
+      center: [selectedSpot.location.lng, selectedSpot.location.lat],
+      offset: [0, -80],
+      zoom: Math.max(map.getZoom(), 13.5),
+      duration: 600,
+    });
+  }, [mapState, selectedSpot]);
 
   // Render User Location & Check-in Circle
   useEffect(() => {
@@ -286,7 +324,7 @@ export function MapPreview({
     };
   }, [mapState, userLocation]);
 
-  const moveToCurrentLocation = () => {
+  const moveToCurrentLocation = (fly = true) => {
     if (!navigator.geolocation) {
       setLocationState('unavailable');
       return;
@@ -298,7 +336,7 @@ export function MapPreview({
         setUserLocation(location);
         onUserLocationChange?.(location);
         setLocationState('ready');
-        if (mapRef.current) {
+        if (fly && mapRef.current) {
           mapRef.current.flyTo({
             center: [location.lng, location.lat],
             zoom: 15,
@@ -311,7 +349,7 @@ export function MapPreview({
   };
 
   useEffect(() => {
-    moveToCurrentLocation();
+    moveToCurrentLocation(false); // 처음 로드 시에는 확대하지 않고 한국 전체를 보여줌
   }, []);
 
   const locationMessage =
@@ -337,7 +375,7 @@ export function MapPreview({
         type="button"
         className="map-preview__locate"
         aria-label="현재 위치로 이동"
-        onClick={moveToCurrentLocation}
+        onClick={() => moveToCurrentLocation(true)}
       >
         <Navigation size={19} />
       </button>

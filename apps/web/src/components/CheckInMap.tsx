@@ -2,7 +2,7 @@ import { Navigation } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import * as maptilersdk from '@maptiler/sdk';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
-import { webEnv } from '../config/env';
+import { getMapTilerStyleUrl, webEnv } from '../config/env';
 import type { Spot } from '../types/spot';
 import { calculateDistanceMeters, CHECK_IN_RADIUS_METERS } from '../features/check-in/distance';
 import { createGeoJsonCircle } from '../lib/maptiler-circle';
@@ -93,13 +93,15 @@ export function CheckInMap({ position, spots = [], selectedSpot: _selectedSpot, 
       const initialCenter: [number, number] = position ? [position.lng, position.lat] : [126.98, 37.58];
       map = new maptilersdk.Map({
         container: mapElement.current,
-        style: webEnv.maptilerStyleId || maptilersdk.MapStyle.STREETS,
+        style: getMapTilerStyleUrl(),
         center: initialCenter,
         zoom: 16,
         dragPan: false, // Locked drag for check-in experience
         scrollZoom: true,
         maxBounds: KOREA_BOUNDS,
         minZoom: 5.5,
+        navigationControl: false,
+        geolocateControl: false,
       });
       mapRef.current = map;
     } catch (err) {

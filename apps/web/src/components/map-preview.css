@@ -151,3 +151,12 @@
   line-height: 1;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
+
+/* MapTiler 워터마크 로고 및 기본 컨트롤 숨김 */
+.maplibregl-ctrl-logo,
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-attrib {
+  display: none !important;
+}

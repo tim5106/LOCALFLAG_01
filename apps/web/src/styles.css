@@ -87,10 +87,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .discovery-view-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .discovery-view-row .view-toggle { margin-bottom: 0; }
 .discovery-view-row .data-source { margin: 0; padding: 5px 8px; border-radius: 999px; background: #edf4ed; color: #42705f; font-size: 10px; font-weight: 800; }
-.discovery-map-stage { position: relative; margin: 0 -2px; }
-.discovery-map-card { overflow: hidden; border-radius: 26px; box-shadow: 0 16px 36px rgba(43, 73, 63, .13); }
-.discovery-map-card .map-preview { height: 500px; min-height: 500px; border-radius: 26px; box-shadow: none; }
-.discovery-map-card .map-canvas { min-height: 500px; }
+.discovery-map-stage { position: relative; margin: 0; }
+.discovery-map-card { width: 100%; height: 100%; overflow: hidden; border-radius: 0; box-shadow: none; }
+.discovery-map-card .map-preview { width: 100%; height: 100%; min-height: 100%; border-radius: 0; box-shadow: none; }
+.discovery-map-card .map-canvas { width: 100%; height: 100%; min-height: 100%; }
 .discovery-map-callout { position: absolute; top: 18px; left: 48px; z-index: 5; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 72px); min-height: 48px; padding: 8px 10px; border: 1px solid rgba(240, 93, 63, .45); border-radius: 15px; background: rgba(255, 255, 255, .96); box-shadow: 0 14px 28px rgba(23, 63, 53, .18); cursor: pointer; }
 .discovery-map-callout strong { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #d7664c; color: #fff; font-size: 13px; }
 .discovery-map-callout strong[data-grade="S"] { background: #e1c65e; color: #6f5a00; }
@@ -184,6 +184,30 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .spot-detail__stats small { color: #84908b; font-size: 10px; }
 .spot-detail__stats strong { margin-top: 7px; color: #173f35; font-size: 17px; }
 .spot-detail__notice { padding: 12px; border-radius: 12px; background: #fff3dc; color: #946520; font-size: 12px; line-height: 1.5; }
+.spot-detail .primary-button {
+  margin-top: 24px;
+  min-height: 52px;
+  border-radius: 16px;
+  background: #c8553d;
+  color: #fff;
+  font-family: "IBM Plex Mono", Inter, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(0, 41, 32, .22);
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+.spot-detail .primary-button:hover {
+  background: #b14b35;
+}
+.spot-map-sheet .primary-button {
+  background: #c8553d;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(23, 63, 53, 0.2);
+}
+.spot-map-sheet .primary-button:hover {
+  background: #b14b35;
+}
 
 .simple-header { margin-bottom: 28px; }
 .simple-header > p:last-child { margin: 12px 0 0; color: #73817c; font-size: 13px; line-height: 1.6; }
@@ -957,9 +981,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 /* Local Flag map-first discovery */
 .discovery-page {
   display: flex;
+  height: 100dvh;
   min-height: 100dvh;
-  padding: 0 20px 120px;
+  padding: 0 20px 112px;
   flex-direction: column;
+  overflow: hidden;
   background: #F7F4EC;
 }
 .discovery-header {
@@ -1010,8 +1036,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .discovery-search input::placeholder { color: #666b69; opacity: 1; }
 .discovery-search input:disabled { cursor: default; -webkit-text-fill-color: #666b69; opacity: 1; }
 .discovery-count strong { color: #c8553d; font-family: Inter, sans-serif; font-size: 40px; font-weight: 800; line-height: 40px; letter-spacing: 0; }
-.discovery-count span { padding-top: 17px; color: #718079; font-family: Inter, sans-serif; font-size: 16px; font-weight: 500; line-height: 18.75px; }
-.discovery-map-stage { position: relative; flex: 1 1 min(461px, 52dvh); min-height: 300px; max-height: min(480px, 52dvh); margin: 0; }
+.discovery-map-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0 -20px 0;
+  overflow: hidden;
+}
 .discovery-map-card { height: 100%; overflow: hidden; border-radius: 0; box-shadow: none; }
 .discovery-map-card .map-preview,
 .discovery-map-card .map-canvas { width: 100%; height: 100%; min-height: 100%; border-radius: 0; }
@@ -1040,22 +1072,69 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .discovery-map-callout em { padding: 2px 6px; border-radius: 4px; background: #fff3dc; color: #d54d35; font-family: Inter, sans-serif; font-size: 10px; line-height: 15px; }
 .discovery-map-state { position: absolute; left: 50%; bottom: 18px; z-index: 6; width: max-content; max-width: calc(100% - 36px); padding: 8px 12px; border-radius: 999px; background: rgba(23, 63, 53, .9); color: #fff; font-size: 11px; text-align: center; transform: translateX(-50%); }
 .discovery-map-state--error { background: rgba(177, 75, 53, .94); }
-.discovery-actions { display: grid; gap: 12px; padding: 12px 0 8px; }
+.discovery-actions {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 12px;
+  z-index: 10;
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  animation: slideUpFade 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.discovery-selected-card-wrap {
+  position: relative;
+  width: 100%;
+}
 .discovery-selected-card {
   display: grid;
   width: 100%;
   grid-template-columns: 44px minmax(0, 1fr) auto;
   min-height: 72px;
   margin: 0;
-  padding: 14px;
+  padding: 12px 38px 12px 14px;
   gap: 12px;
   border: 1px solid rgba(222, 217, 205, .8);
   border-radius: 16px;
   background: rgba(255, 255, 255, .95);
-  box-shadow: 0 10px 28px rgba(23, 63, 53, .08);
+  box-shadow: 0 10px 28px rgba(23, 63, 53, .12);
   text-align: left;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   cursor: pointer;
+}
+.discovery-selected-card__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f0ede3;
+  color: #68756f;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.discovery-selected-card__close:hover {
+  background: #e2ddd0;
+  color: #183b33;
 }
 .discovery-selected-card__icon { width: 44px; height: 44px; border-radius: 12px; background: #fff3dc; color: #d54d35; }
 .discovery-selected-card__body { display: block; min-width: 0; font-family: "IBM Plex Mono", monospace; }

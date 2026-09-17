@@ -11,6 +11,9 @@ export const webEnv = {
 
 export const getMapTilerStyleUrl = () => {
   if (webEnv.maptilerStyleId) {
+    if (webEnv.maptilerStyleId.startsWith('http://') || webEnv.maptilerStyleId.startsWith('https://')) {
+      return webEnv.maptilerStyleId;
+    }
     return `https://api.maptiler.com/maps/${webEnv.maptilerStyleId}/style.json?key=${webEnv.maptilerApiKey}`;
   }
   return 'streets-v2';
