@@ -12,6 +12,7 @@ interface ProfilePageProps {
 export function ProfilePage({ onSignOut }: ProfilePageProps) {
   const queryClient = useQueryClient();
   const closeProfile = useUiStore((state) => state.closeProfile);
+  const openShop = useUiStore((state) => state.openShop);
   const navigateToMyFlagSection = useUiStore((state) => state.navigateToMyFlagSection);
   const [toast, setToast] = useState('');
 
@@ -144,7 +145,7 @@ export function ProfilePage({ onSignOut }: ProfilePageProps) {
           <button
             type="button"
             className="profile-stat-card__shop-btn"
-            onClick={() => navigateToMyFlagSection('skins')}
+            onClick={openShop}
           >
             <span>상점 가기</span>
             <ChevronRight size={12} color="#F0C75E" />

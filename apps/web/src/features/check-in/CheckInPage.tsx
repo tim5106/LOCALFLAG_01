@@ -19,6 +19,7 @@ export function CheckInPage() {
   const queryClient = useQueryClient();
   const meQuery = useMe();
   const openProfile = useUiStore((store) => store.openProfile);
+  const openShop = useUiStore((store) => store.openShop);
   const storedSelectedSpot = useUiStore((store) => store.selectedSpot);
   const eligibleStoredSpot =
     storedSelectedSpot?.geometryType === 'POINT' && storedSelectedSpot.checkInEnabled !== false
@@ -200,9 +201,14 @@ export function CheckInPage() {
           <h1>Local Flag</h1>
         </div>
         <div className="discovery-header__actions">
-          <strong className="discovery-balance" aria-label="보유 포인트">
+          <button
+            type="button"
+            className="discovery-balance"
+            aria-label="보유 포인트"
+            onClick={openShop}
+          >
             {meQuery.isPending ? '— P' : meQuery.isError ? '확인 불가' : `${(meQuery.profile?.pointBalance ?? 0).toLocaleString()} P`}
-          </strong>
+          </button>
           <button
             type="button"
             className="discovery-profile"

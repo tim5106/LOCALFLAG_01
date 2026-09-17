@@ -164,7 +164,7 @@ describe('ProfilePage', () => {
     expect(useUiStore.getState().activeTab).toBe('my-flag');
   });
 
-  it('navigates to My Flag skins section when clicking "상점 가기"', async () => {
+  it('opens shop when clicking "상점 가기"', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -180,9 +180,7 @@ describe('ProfilePage', () => {
     const shopButton = await screen.findByRole('button', { name: /상점 가기/ });
     fireEvent.click(shopButton);
 
-    expect(useUiStore.getState().activeTab).toBe('my-flag');
-    expect(useUiStore.getState().profileOpen).toBe(false);
-    expect(useUiStore.getState().myFlagTarget).toBe('skins');
+    expect(useUiStore.getState().shopOpen).toBe(true);
   });
 
   it('navigates to My Flag photolog section when clicking "방문 인증 기록 / 포토로그"', async () => {

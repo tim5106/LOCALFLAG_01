@@ -22,6 +22,7 @@ interface UiState {
   profileOpen: boolean;
   profileOrigin: 'discovery' | 'my-flag' | 'check-in';
   myFlagTarget: 'photolog' | 'skins' | null;
+  shopOpen: boolean;
   setActiveTab: (tab: AppTab) => void;
   setDiscoveryView: (view: DiscoveryView) => void;
   setDiscoveryFilters: (filters: Partial<DiscoveryFilters>) => void;
@@ -31,6 +32,8 @@ interface UiState {
   closeProfile: () => void;
   navigateToMyFlagSection: (target: 'photolog' | 'skins') => void;
   clearMyFlagTarget: () => void;
+  openShop: () => void;
+  closeShop: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -42,7 +45,8 @@ export const useUiStore = create<UiState>((set) => ({
   profileOpen: false,
   profileOrigin: 'discovery',
   myFlagTarget: null,
-  setActiveTab: (activeTab) => set({ activeTab, profileOpen: false }),
+  shopOpen: false,
+  setActiveTab: (activeTab) => set({ activeTab, profileOpen: false, shopOpen: false }),
   setDiscoveryView: (discoveryView) => set({ discoveryView }),
   setDiscoveryFilters: (filters) =>
     set((state) => ({ discoveryFilters: { ...state.discoveryFilters, ...filters } })),
@@ -51,7 +55,8 @@ export const useUiStore = create<UiState>((set) => ({
   openProfile: (profileOrigin) => set({ profileOpen: true, profileOrigin }),
   closeProfile: () => set({ profileOpen: false }),
   navigateToMyFlagSection: (myFlagTarget) =>
-    set({ activeTab: 'my-flag', profileOpen: false, myFlagTarget }),
+    set({ activeTab: 'my-flag', profileOpen: false, shopOpen: false, myFlagTarget }),
   clearMyFlagTarget: () => set({ myFlagTarget: null }),
+  openShop: () => set({ shopOpen: true }),
+  closeShop: () => set({ shopOpen: false }),
 }));
-
