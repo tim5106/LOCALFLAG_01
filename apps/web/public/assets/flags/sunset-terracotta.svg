@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Flag Pole -->
+  <rect x="26" y="16" width="6" height="88" rx="3" fill="#42342E" />
+  <circle cx="29" cy="16" r="6" fill="#F49D37" />
+  <circle cx="29" cy="16" r="3" fill="#FFF3E0" />
+  <path d="M26 100H32V104H26Z" fill="#2E231E" />
+
+  <!-- Flag Body -->
+  <defs>
+    <linearGradient id="terracottaGrad" x1="32" y1="24" x2="102" y2="66" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E26D5C" />
+      <stop offset="1" stop-color="#C24838" />
+    </linearGradient>
+  </defs>
+  <path d="M32 24C48 22 64 30 80 26C92 23 100 28 102 30V66C98 64 88 60 76 64C60 69 46 60 32 64V24Z" fill="url(#terracottaGrad)" />
+  
+  <!-- Wave Shadow Overlay -->
+  <path d="M32 50C48 54 62 67 76 64C88 60 98 64 102 66V62C98 58 88 56 76 60C62 63 48 50 32 46V50Z" fill="#8B261D" opacity="0.5" />
+
+  <!-- Sunset Mountain & Sun Symbol -->
+  <circle cx="56" cy="44" r="10" fill="#FFE0B2" />
+  <path d="M48 48C51 44 54 41 57 44C60 41 63 44 65 48Z" fill="#E26D5C" />
+  <circle cx="56" cy="40" r="3.5" fill="#F49D37" />
+</svg>
+
