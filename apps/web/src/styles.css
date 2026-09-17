@@ -9,17 +9,17 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+body { margin: 0; min-width: 320px; min-height: 100dvh; }
 button, input { font: inherit; }
 button { color: inherit; }
 button, a, input { min-height: 44px; }
 button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #f0b847; outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-.app-shell { min-height: 100vh; display: grid; place-items: center; padding: 0; }
-.app-frame { position: relative; width: min(100%, 480px); height: 100dvh; min-height: 100vh; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; background: #f7f4ec; box-shadow: 0 24px 80px rgba(20, 47, 40, .16); }
+.app-shell { min-height: 100dvh; display: grid; place-items: center; padding: 0; }
+.app-frame { position: relative; width: min(100%, 480px); height: 100dvh; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; background: #f7f4ec; box-shadow: 0 24px 80px rgba(20, 47, 40, .16); }
 .app-frame::-webkit-scrollbar { display: none; }
-.page { min-height: 100vh; padding: 28px 20px; }
+.page { min-height: 100vh; padding: 28px 20px 120px; }
 .discovery-page { min-height: 100vh; background: #F7F4EC; }
 .auth-page { min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 52px 24px 36px; background: linear-gradient(155deg, #f7f4ec, #e7f0e6); }
 .auth-brand { max-width: 330px; }
@@ -169,7 +169,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .spot-map-sheet__category { color: #d54d35; font-size: 10px; font-weight: 800; }
 .spot-map-sheet h2 { margin: 5px 0 6px; font-size: 18px; }
 .spot-map-sheet p { display: flex; align-items: center; gap: 4px; margin: 0 0 12px; color: #718079; font-size: 11px; }
-.spot-detail { min-height: 100vh; padding: 24px 20px 40px; background: #f7f4ec; }
+.spot-detail { min-height: 100vh; padding: 24px 20px 120px; background: #f7f4ec; }
 .detail-back { display: flex; align-items: center; gap: 7px; margin-bottom: 18px; padding: 0; border: 0; background: transparent; color: #53635d; font-size: 12px; font-weight: 800; cursor: pointer; }
 .spot-detail__image { position: relative; height: 250px; overflow: hidden; border-radius: 24px; background: #dfe9df; }
 .spot-detail__image img { width: 100%; height: 100%; object-fit: cover; }
@@ -187,7 +187,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .simple-header { margin-bottom: 28px; }
 .simple-header > p:last-child { margin: 12px 0 0; color: #73817c; font-size: 13px; line-height: 1.6; }
 .check-in-map-stage { padding: 0 20px; }
-.check-in-map { position: relative; height: 330px; margin: 8px 0 16px; border-radius: 20px; overflow: hidden; background: #dbe8d7; box-shadow: 0 8px 24px rgba(23, 63, 53, .08); }
+.check-in-map { position: relative; height: 286px; margin: 6px 0 12px; border-radius: 20px; overflow: hidden; background: #dbe8d7; box-shadow: 0 8px 24px rgba(23, 63, 53, .08); }
 .check-in-map__canvas { width: 100%; height: 100%; }
 .check-in-map__locate { position: absolute; right: 14px; bottom: 14px; z-index: 3; display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 14px; background: #fff; color: #173f35; box-shadow: 0 8px 20px rgba(23,63,53,.18); cursor: pointer; }
 .check-in-map__zoom-controls { position: absolute; right: 14px; bottom: 14px; z-index: 3; display: grid; gap: 7px; }
@@ -246,14 +246,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 /* My Flag Redesign */
 .my-flag-page {
   min-height: 100vh;
-  padding: 0 20px 24px;
+  padding: 0 20px 120px;
   background: #F7F4EC;
   color: #183B33;
 }
 
 .my-flag-header {
-  height: 64px;
-  margin: 0 -20px 8px -20px;
+  height: 56px;
+  margin: 0 -20px 4px -20px;
   padding: 0 20px;
   display: flex;
   justify-content: space-between;
@@ -295,7 +295,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 .my-flag-intro {
-  padding: 8px 0 16px;
+  padding: 6px 0 12px;
 }
 
 .my-flag-intro h2 {
@@ -311,12 +311,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 20px;
+  padding: 16px;
   border-radius: 24px;
   background: #C8553D;
   color: #FFF8E9;
   box-shadow: 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .my-flag-hero-card__badge {
@@ -392,14 +392,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 .my-flag-progress-card {
-  padding: 20px;
+  padding: 16px;
   border-radius: 22px;
   background: #FFFFFF;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .my-flag-progress-card__header {
@@ -535,7 +535,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 .my-flag-section {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .my-flag-section__heading {
@@ -688,7 +688,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  min-height: 189px;
+  min-height: 180px;
   text-align: center;
   border: 1px solid transparent;
 }
@@ -769,7 +769,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 
 .my-flag-skin-btn {
   width: 100%;
-  min-height: 32px;
+  min-height: 44px;
   padding: 6px 4px;
   border-radius: 12px;
   border: 0;
@@ -902,8 +902,16 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .kakao-spot-marker > span { color: #fff; font-size: 11px; font-weight: 800; }
 
 @media (min-width: 600px) {
-  .app-shell { padding: 28px; }
-  .app-frame { min-height: calc(100vh - 56px); max-height: 900px; border-radius: 34px; }
+  .app-shell {
+    padding: 28px;
+  }
+  .app-frame {
+    --app-frame-height: min(calc(100dvh - 56px), 900px);
+    height: var(--app-frame-height);
+    min-height: 0;
+    max-height: 900px;
+    border-radius: 34px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -915,7 +923,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .discovery-page {
   display: flex;
   min-height: 100dvh;
-  padding: 0 20px 24px;
+  padding: 0 20px 120px;
   flex-direction: column;
   background: #F7F4EC;
 }
@@ -968,7 +976,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .discovery-search input:disabled { cursor: default; -webkit-text-fill-color: #666b69; opacity: 1; }
 .discovery-count strong { color: #c8553d; font-family: Inter, sans-serif; font-size: 40px; font-weight: 800; line-height: 40px; letter-spacing: 0; }
 .discovery-count span { padding-top: 17px; color: #718079; font-family: Inter, sans-serif; font-size: 16px; font-weight: 500; line-height: 18.75px; }
-.discovery-map-stage { position: relative; flex: 1 1 461px; min-height: 360px; max-height: 525px; margin: 0; }
+.discovery-map-stage { position: relative; flex: 1 1 min(461px, 52dvh); min-height: 300px; max-height: min(480px, 52dvh); margin: 0; }
 .discovery-map-card { height: 100%; overflow: hidden; border-radius: 0; box-shadow: none; }
 .discovery-map-card .map-preview,
 .discovery-map-card .map-canvas { width: 100%; height: 100%; min-height: 100%; border-radius: 0; }
@@ -1022,13 +1030,18 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .discovery-check-in-button span { min-width: 122px; text-align: center; }
 .discovery-check-in-button svg:first-child { color: #f0c75e; }
 .bottom-nav {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 20;
   width: min(calc(100% - 40px), 440px);
-  padding: 6px;
+  margin: 0;
   border: 1px solid rgba(222, 217, 205, .7);
   border-radius: 24px;
   background: rgba(255, 255, 255, .72);
   box-shadow: 0 16px 40px rgba(27, 57, 48, .14);
   backdrop-filter: blur(9px);
+  transform: translateX(-50%);
 }
 .bottom-nav__item { min-height: 46px; gap: 1px; padding: 6px 8px; border-radius: 20px; color: #718079; font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500; line-height: 13.75px; }
 .bottom-nav__item[data-active="true"] { background: #b14b35; color: #fff8e9; box-shadow: 0 4px 12px rgba(23, 63, 53, .22); }
@@ -1036,7 +1049,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (max-width: 359px) {
   .discovery-page { padding-inline: 14px; }
   .discovery-header { margin-inline: -14px; padding-inline: 14px; }
-  .discovery-map-stage { min-height: 330px; }
+  .discovery-map-stage { min-height: 280px; }
   .discovery-toolbar { gap: 7px; }
   .discovery-count { gap: 6px; }
   .discovery-count strong { font-size: 34px; line-height: 36px; }
@@ -1052,8 +1065,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (min-width: 600px) {
   .discovery-search-overlay { top: 28px; bottom: 28px; height: auto; max-height: 900px; }
   .discovery-search-sheet { border-radius: 28px; }
-  .app-frame { max-height: 923px; }
-  .discovery-page { min-height: 923px; }
+  .bottom-nav { bottom: calc((100dvh - var(--app-frame-height)) / 2 + 16px); }
 }
 .discovery-account-state,
 .discovery-check-in-note {
@@ -1803,14 +1815,14 @@ button.discovery-search {
 /* Profile Page */
 .profile-page {
   min-height: 100vh;
-  padding: 0 20px 24px;
+  padding: 0 20px 120px;
   background: #F7F4EC;
   color: #183B33;
 }
 
 .profile-header {
-  height: 64px;
-  margin: 0 -20px 8px -20px;
+  height: 56px;
+  margin: 0 -20px 4px;
   padding: 0 20px;
   display: flex;
   align-items: center;
@@ -1981,7 +1993,7 @@ button.discovery-search {
 .profile-stats-row {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .profile-stat-card {
@@ -1994,7 +2006,7 @@ button.discovery-search {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 88px;
+  min-height: 80px;
 }
 
 .profile-stat-card--points {
@@ -2069,14 +2081,14 @@ button.discovery-search {
 
 /* Achievements Section */
 .profile-achievements-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .profile-achievements-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding: 0 4px;
 }
 
@@ -2119,8 +2131,8 @@ button.discovery-search {
 }
 
 .profile-badge-card {
-  flex: 0 0 130px;
-  padding: 14px 12px;
+  flex: 0 0 120px;
+  padding: 12px 10px;
   border-radius: 20px;
   background: #FFFFFF;
   box-shadow: 0px 1px 3px rgba(23, 63, 53, 0.06);
@@ -2167,7 +2179,7 @@ button.discovery-search {
 
 /* Menu Sections */
 .profile-menu-section {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .profile-menu-section__title {
@@ -2194,7 +2206,7 @@ button.discovery-search {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  padding: 10px 12px;
   background: transparent;
   border: none;
   border-radius: 16px;
@@ -2304,7 +2316,7 @@ button.discovery-search {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 16px 0 24px;
+  padding: 12px 0 8px;
 }
 
 .profile-logout-btn {
@@ -2361,13 +2373,13 @@ button.discovery-search {
 
 .check-in-new-page {
   min-height: 100vh;
-  padding: 0 0 24px;
+  padding: 0 0 120px;
   background: linear-gradient(0deg, #F7F4EC 0%, #F7F4EC 100%), #E7E4DC, white;
   color: #183B33;
 }
 
 .check-in-nav-header {
-  height: 64px;
+  height: 56px;
   padding: 0 20px;
   display: flex;
   justify-content: space-between;
@@ -2399,7 +2411,7 @@ button.discovery-search {
 }
 
 .check-in-sub-header {
-  padding: 8px 20px 12px 20px;
+  padding: 6px 20px 8px;
   background: rgba(247, 244, 236, 0.95);
   backdrop-filter: blur(6px);
   display: flex;
@@ -2586,7 +2598,7 @@ button.discovery-search {
 
 /* Content Area */
 .check-in-content-area {
-  padding: 16px 20px 24px;
+  padding: 12px 20px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2631,10 +2643,10 @@ button.discovery-search {
   border-radius: 22px;
   outline: 1px rgba(222, 217, 205, 0.40) solid;
   outline-offset: -1px;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .check-in-card-body {
@@ -2764,6 +2776,7 @@ button.discovery-search {
 
 .check-in-select-dropdown {
   width: 100%;
+  min-height: 44px;
   padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid #DED9CD;
@@ -2781,7 +2794,7 @@ button.discovery-search {
 }
 
 .check-in-cta-btn {
-  height: 50px;
+  height: 48px;
   background: #C8553D;
   box-shadow: 0 4px 14px rgba(23, 63, 53, 0.25);
   border-radius: 12px;
