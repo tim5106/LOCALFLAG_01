@@ -74,10 +74,13 @@ describe('user read routes', () => {
 
   it('returns only the authenticated ledger and rejects malformed cursors', async () => {
     vi.mocked(users.listPointLedger).mockResolvedValue([{ transactionId: '20000000-0000-4000-8000-000000000001',
-      type: 'CHECK_IN', amount: 100, balanceAfter: 500, policyVersion: 'reward-v1',
+      type: 'SIGNUP', amount: 1000, balanceAfter: 1000, policyVersion: 'signup-v1',
       createdAt: '2026-08-25T00:00:00.000Z', checkInId: null }]);
     const response = await request(app()).get('/api/v1/me/point-ledger').expect(200);
     expect(users.listPointLedger).toHaveBeenCalledWith(userId, undefined, 21);
+    expect(response.body.data[0]).toMatchObject({
+      type: 'SIGNUP', amount: 1000, balanceAfter: 1000, policyVersion: 'signup-v1', checkInId: null,
+    });
     expect(response.body.data[0].metadata).toBeUndefined();
     const invalid = await request(app()).get('/api/v1/me/point-ledger?cursor=bad').expect(400);
     expect(invalid.body.error.code).toBe('INVALID_CURSOR');
