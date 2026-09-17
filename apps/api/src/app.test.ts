@@ -59,4 +59,34 @@ describe('Local Flag API', () => {
     expect(response.body.error.code).toBe('ROUTE_NOT_FOUND');
     expect(response.body.error.traceId).toBeTruthy();
   });
+
+  it('returns a safe 400 envelope for malformed JSON', async () => {
+    const response = await request(app).post('/api/v1/health')
+      .set('Content-Type', 'application/json').send('{"broken":').expect(400);
+    expect(response.body.error).toMatchObject({ code: 'INVALID_JSON', traceId: response.headers['x-request-id'] });
+    expect(response.body.error.message).toBeTruthy();
+    expect(JSON.stringify(response.body)).not.toContain('{"broken":');
+  });
+
+  it('returns a safe 413 envelope when JSON exceeds 64kb', async () => {
+    const response = await request(app).post('/api/v1/health')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ data: 'x'.repeat(65 * 1024) })).expect(413);
+    expect(response.body.error).toMatchObject({ code: 'PAYLOAD_TOO_LARGE', traceId: response.headers['x-request-id'] });
+    expect(response.body.error.message).toBeTruthy();
+    expect(JSON.stringify(response.body)).not.toContain('x'.repeat(100));
+  });
+
+  it('keeps unexpected errors as sanitized 500 responses', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const response = await request(app).get('/api/v1/me').expect(500);
+      expect(response.body.error).toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR', traceId: response.headers['x-request-id'],
+      });
+      expect(JSON.stringify(response.body)).not.toContain('not used');
+    } finally {
+      logged.mockRestore();
+    }
+  });
 });
