@@ -240,4 +240,38 @@ describe('DiscoveryPage redesigned home', () => {
       expect((btn as HTMLButtonElement).disabled).toBe(true);
     });
   });
+
+  it('disables check-in button and displays notice when the active spot has already been visited', async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/me/map')) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              equippedFlagSkinId: 'bukchon-indigo',
+              visits: [
+                {
+                  spotId: spot.id,
+                  spotTitle: spot.title,
+                  location: spot.location,
+                  visitedAt: '2026-09-01T00:00:00.000Z',
+                  rewardPoints: 150,
+                  status: 'SUCCESS',
+                },
+              ],
+            },
+          }),
+          { status: 200 }
+        );
+      }
+      return successResponse(input);
+    });
+
+    renderPage();
+    await screen.findAllByText('북촌 쪽염색 공방 화연당');
+
+    const checkInBtn = screen.getByRole('button', { name: '현장 인증하기' }) as HTMLButtonElement;
+    expect(checkInBtn.disabled).toBe(true);
+    expect(screen.getByText('이미 인증한 장소입니다.')).toBeTruthy();
+  });
 });

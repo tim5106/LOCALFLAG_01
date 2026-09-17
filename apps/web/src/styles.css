@@ -1112,6 +1112,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 .discovery-check-in-note { margin: -6px 4px 0; text-align: center; }
 .discovery-check-in-button:disabled { cursor: not-allowed; opacity: .48; box-shadow: none; }
+.discovery-check-in-button--completed { background: #5c6c66 !important; opacity: .65; }
 .map-preview__location-state {
   position: absolute;
   right: 66px;

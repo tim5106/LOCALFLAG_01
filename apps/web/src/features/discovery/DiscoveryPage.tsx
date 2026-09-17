@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, CircleUserRound, Flag, Search, Sprout } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { getMyMap, getSpots, type MyFlagMap } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
 import { SpotDetail } from '../../components/SpotDetail';
@@ -30,14 +30,18 @@ export function DiscoveryPage() {
   const mapQuery = useQuery<{ data: MyFlagMap }>({ queryKey: ['my-map'], queryFn: getMyMap, retry: false });
   const spots = (spotsQuery.data?.data ?? []).filter((spot) => spot.geometryType !== 'EXCLUDE');
   const activeSpot = selectedSpot ?? spots[0] ?? null;
-  const visitedCount = mapQuery.data
-    ? new Set(mapQuery.data.data.visits.map((visit) => visit.spotId)).size
-    : null;
+  const visitedSpotIds = useMemo(
+    () => new Set((mapQuery.data?.data?.visits ?? []).map((visit) => visit.spotId)),
+    [mapQuery.data]
+  );
+  const equippedSkinId = meQuery.profile?.equippedFlagSkinId ?? mapQuery.data?.data?.equippedFlagSkinId ?? null;
+  const visitedCount = mapQuery.data ? visitedSpotIds.size : null;
   const totalCount = spotsQuery.data?.meta.total ?? (spotsQuery.data ? spots.length : null);
   const distance = activeSpot && userLocation
     ? formatDistance(calculateDistanceMeters(userLocation.lat, userLocation.lng, activeSpot.location.lat, activeSpot.location.lng))
     : null;
   const checkInAvailable = Boolean(activeSpot && activeSpot.geometryType === 'POINT' && activeSpot.checkInEnabled !== false);
+  const isSpotVisited = Boolean(activeSpot && visitedSpotIds.has(activeSpot.id));
 
   if (detailSpot) return <SpotDetail spot={detailSpot} onClose={() => setDetailSpot(null)} />;
   const isSearchOpen = discoveryView === 'search';
@@ -47,7 +51,7 @@ export function DiscoveryPage() {
   };
 
   const startCheckIn = () => {
-    if (!activeSpot || !checkInAvailable) return;
+    if (!activeSpot || !checkInAvailable || isSpotVisited) return;
     setSelectedSpot(activeSpot);
     setActiveTab('check-in');
   };
@@ -101,6 +105,8 @@ export function DiscoveryPage() {
           <MapPreview
             spots={spots}
             selectedSpot={activeSpot}
+            visitedSpotIds={visitedSpotIds}
+            equippedSkinId={equippedSkinId}
             onSelect={setSelectedSpot}
             onUserLocationChange={setUserLocation}
           />
@@ -128,12 +134,19 @@ export function DiscoveryPage() {
             </span>
             {activeSpot.estimatedReward !== undefined && <b>+{activeSpot.estimatedReward} P</b>}
           </button>
-          <button type="button" className="discovery-check-in-button" onClick={startCheckIn} disabled={!checkInAvailable} aria-describedby={!checkInAvailable ? 'check-in-unavailable' : undefined}>
+          <button
+            type="button"
+            className={`discovery-check-in-button${isSpotVisited ? ' discovery-check-in-button--completed' : ''}`}
+            onClick={startCheckIn}
+            disabled={!checkInAvailable || isSpotVisited}
+            aria-describedby={!checkInAvailable ? 'check-in-unavailable' : isSpotVisited ? 'check-in-completed' : undefined}
+          >
             <Flag size={17} fill="currentColor" />
             <span>현장 인증하기</span>
             <ArrowRight size={20} />
           </button>
           {!checkInAvailable && <p id="check-in-unavailable" className="discovery-check-in-note">이 장소는 현장 인증을 지원하지 않아요.</p>}
+          {checkInAvailable && isSpotVisited && <p id="check-in-completed" className="discovery-check-in-note">이미 인증한 장소입니다.</p>}
         </div>
       )}
       <DiscoverySearchSheet open={isSearchOpen} onClose={closeSearch} />

@@ -5,6 +5,7 @@ import { groupSpotsByLocation } from '../lib/map-preview-spots';
 import { getMapSpotState, getMapSpotStateLabel, getNearbySpotIds } from '../lib/map-spot-state';
 import type { Spot } from '../types/spot';
 import { CHECK_IN_RADIUS_METERS } from '../features/check-in/distance';
+import { getFlagSkinAssetUrl } from '../features/point-shop/mock-skins';
 import { getCheckInCircleOptions } from './CheckInMap';
 import './map-preview.css';
 
@@ -17,6 +18,8 @@ declare global {
 interface MapPreviewProps {
   spots: Spot[];
   selectedSpot?: Spot | null;
+  visitedSpotIds?: ReadonlySet<number>;
+  equippedSkinId?: string | null;
   onSelect?: (spot: Spot) => void;
   onViewportChange?: (viewport: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => void;
   onUserLocationChange?: (location: Spot['location']) => void;
@@ -27,6 +30,8 @@ type LocationState = 'idle' | 'locating' | 'ready' | 'unavailable';
 export function MapPreview({
   spots,
   selectedSpot,
+  visitedSpotIds = new Set<number>(),
+  equippedSkinId,
   onSelect,
   onViewportChange,
   onUserLocationChange,
@@ -110,27 +115,51 @@ export function MapPreview({
           spot: representative,
           selectedSpotId: selectedSpot?.id,
           nearbySpotIds,
+          visitedSpotIds,
         });
-        const state =
-          representative.checkInCompleted || representativeState.visited
-            ? 'completed'
-            : representativeState.checkInAvailable
+        const isCompleted =
+          representative.checkInCompleted ||
+          representativeState.visited ||
+          group.some((spot) => spot.checkInCompleted || visitedSpotIds.has(spot.id));
+        const isSelected = group.some((spot) => spot.id === selectedSpot?.id);
+
+        const content = document.createElement('button');
+        content.type = 'button';
+
+        if (isCompleted) {
+          const skinUrl = getFlagSkinAssetUrl(equippedSkinId);
+          content.className = `kakao-flag-marker${isSelected ? ' kakao-flag-marker--selected' : ''}`;
+          content.setAttribute(
+            'aria-label',
+            group.length > 1
+              ? `${group.length}개 장소 (인증 완료 포함): ${group.map((spot) => spot.title).join(', ')}`
+              : `${representative.title}, 방문 완료 깃발`
+          );
+          content.innerHTML = `
+            <div class="kakao-flag-marker__inner">
+              <img src="${skinUrl}" alt="플래그" class="kakao-flag-marker__img" />
+              ${group.length > 1 ? `<span class="kakao-flag-marker__badge">${group.length}</span>` : ''}
+            </div>
+            <span class="kakao-flag-marker__shadow"></span>
+          `;
+        } else {
+          const state = representativeState.checkInAvailable
             ? 'check-in'
             : representative.reviewStatus
             ? 'pending'
             : 'default';
-        const content = document.createElement('button');
-        content.type = 'button';
-        content.className = `kakao-spot-marker kakao-spot-marker--${state}${
-          group.some((spot) => spot.id === selectedSpot?.id) ? ' kakao-spot-marker--selected' : ''
-        }`;
-        content.setAttribute(
-          'aria-label',
-          group.length > 1
-            ? `${group.length}개 장소: ${group.map((spot) => spot.title).join(', ')}`
-            : `${representative.title}, ${getMapSpotStateLabel(representativeState)}`
-        );
-        content.innerHTML = group.length > 1 ? `<span>${group.length}</span>` : '<span></span>';
+          content.className = `kakao-spot-marker kakao-spot-marker--${state}${
+            isSelected ? ' kakao-spot-marker--selected' : ''
+          }`;
+          content.setAttribute(
+            'aria-label',
+            group.length > 1
+              ? `${group.length}개 장소: ${group.map((spot) => spot.title).join(', ')}`
+              : `${representative.title}, ${getMapSpotStateLabel(representativeState)}`
+          );
+          content.innerHTML = group.length > 1 ? `<span>${group.length}</span>` : '<span></span>';
+        }
+
         content.addEventListener('click', () => {
           onSelect?.(group[selectedIndex] ?? representative);
           selectedIndex = (selectedIndex + 1) % group.length;
@@ -142,13 +171,14 @@ export function MapPreview({
             representative.location.lng
           ),
           content,
-          yAnchor: 1,
+          xAnchor: isCompleted ? 0.24 : 0.5,
+          yAnchor: isCompleted ? 0.87 : 1,
         });
       })
       .filter((marker): marker is any => marker !== null);
 
     return () => markersRef.current.forEach((marker) => marker.setMap(null));
-  }, [mapState, nearbySpotIds, onSelect, selectedSpot, spots]);
+  }, [equippedSkinId, mapState, nearbySpotIds, onSelect, selectedSpot, spots, visitedSpotIds]);
 
   useEffect(() => {
     if (mapState !== 'ready' || !userLocation || !window.kakao || !mapRef.current) return;

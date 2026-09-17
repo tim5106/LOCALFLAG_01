@@ -4,6 +4,7 @@ import {
   INITIAL_MOCK_SKINS,
   equipMockFlagSkin,
   getEquippedSkinId,
+  getFlagSkinAssetUrl,
   getMockFlagSkins,
   getOwnedSkinIds,
   getSimulatedPointDeduction,
@@ -107,6 +108,13 @@ describe('mock-skins catalog and simulator', () => {
     expect(getEquippedSkinId()).toBe('default-red');
     expect(getSimulatedPointDeduction()).toBe(0);
     expect(getOwnedSkinIds()).toEqual(['default-red']);
+  });
+
+  it('returns correct assetUrl for given skinId or falls back to default-red', () => {
+    expect(getFlagSkinAssetUrl('bukchon-indigo')).toBe('/assets/flags/bukchon-indigo.svg');
+    expect(getFlagSkinAssetUrl('gold-master')).toBe('/assets/flags/gold-master.svg');
+    expect(getFlagSkinAssetUrl('unknown-id')).toBe('/assets/flags/default-red.svg');
+    expect(getFlagSkinAssetUrl(null)).toBe('/assets/flags/default-red.svg');
   });
 });
 

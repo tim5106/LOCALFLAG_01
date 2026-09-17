@@ -114,6 +114,11 @@ export function getSimulatedPointDeduction(): number {
   return Number.isFinite(num) && num >= 0 ? num : 0;
 }
 
+export function getFlagSkinAssetUrl(skinId?: string | null): string {
+  const skin = INITIAL_MOCK_SKINS.find((s) => s.id === skinId);
+  return skin?.assetUrl ?? '/assets/flags/default-red.svg';
+}
+
 export function getMockFlagSkins(): FlagSkin[] {
   const ownedIds = new Set(getOwnedSkinIds());
   const equippedId = getEquippedSkinId();
