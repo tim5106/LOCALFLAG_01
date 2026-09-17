@@ -1,4 +1,5 @@
 import type { Pool } from 'pg';
+import { env } from '../config/env.js';
 
 export type ProfileStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED';
 
@@ -73,6 +74,9 @@ export class PostgresUserReadRepository implements UserReadRepository {
   }
 
   async ensureActiveProfile(userId: string, nickname: string): Promise<UserProfile | null> {
+    if (env.NODE_ENV === 'production') {
+      throw new Error('Dev-test profile bootstrap is disabled in production.');
+    }
     await this.pool.query(
       `insert into auth.users (
          id, instance_id, aud, role, email, encrypted_password,

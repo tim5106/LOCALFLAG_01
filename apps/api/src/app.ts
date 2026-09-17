@@ -12,10 +12,11 @@ export function createApp(dependencies: ApiRouterDependencies) {
 
   app.disable('x-powered-by');
   if (env.NODE_ENV === 'production') app.set('trust proxy', 1);
-  const allowedOrigins = env.CORS_ORIGIN.split(',').map((origin) => origin.trim());
+  app.use(helmet());
+  const allowedOrigins = new Set(env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean));
   app.use(cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (!origin || allowedOrigins.has(origin)) {
         return callback(null, true);
       }
       return callback(null, false);

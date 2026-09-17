@@ -1,5 +1,3 @@
-alter type public.point_transaction_type add value if not exists 'SIGNUP';
-
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql

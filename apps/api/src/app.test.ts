@@ -2,6 +2,7 @@ import type { RequestHandler } from 'express';
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from './app.js';
+import { env } from './config/env.js';
 import type { SpotReadRepository } from './repositories/spot-read-repository.js';
 import type { CheckInRepository } from './repositories/check-in-repository.js';
 import type { FlagRepository } from './repositories/flag-repository.js';
@@ -29,6 +30,28 @@ describe('Local Flag API', () => {
     const response = await request(app).get('/api/v1/health').expect(200);
     expect(response.body.data.status).toBe('ok');
     expect(response.headers['x-request-id']).toBeTruthy();
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+  });
+
+  it('allows only explicitly configured browser origins, including comma-separated entries', async () => {
+    const previous = env.CORS_ORIGIN;
+    env.CORS_ORIGIN = ' , https://first.example, , https://second.example , ';
+    try {
+      const configuredApp = createApp({ spots, users, checkIns, flags, reviews, requireAuth: unauthorized, requireInternal: internal, operations });
+      for (const origin of ['https://first.example', 'https://second.example']) {
+        const response = await request(configuredApp).get('/api/v1/health').set('Origin', origin).expect(200);
+        expect(response.headers['access-control-allow-origin']).toBe(origin);
+        expect(response.headers['access-control-allow-credentials']).toBe('true');
+      }
+      const rejected = await request(configuredApp).get('/api/v1/health')
+        .set('Origin', 'https://arbitrary.vercel.app').expect(200);
+      expect(rejected.headers['access-control-allow-origin']).toBeUndefined();
+      const withoutOrigin = await request(configuredApp).get('/api/v1/health').expect(200);
+      expect(withoutOrigin.body.data.status).toBe('ok');
+      expect(withoutOrigin.headers['access-control-allow-origin']).toBeUndefined();
+    } finally {
+      env.CORS_ORIGIN = previous;
+    }
   });
 
   it('uses the common error envelope', async () => {

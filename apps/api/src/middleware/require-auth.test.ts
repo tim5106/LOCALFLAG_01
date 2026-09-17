@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TokenVerificationError, type TokenVerifier } from '../auth/token-verifier.js';
 import { errorHandler } from './error-handler.js';
 import { createRequireAuth } from './require-auth.js';
+import { env } from '../config/env.js';
 
 const verifier: TokenVerifier = { verify: vi.fn() };
 const users = { findProfile: vi.fn() };
@@ -48,6 +49,21 @@ describe('createRequireAuth', () => {
     expect(response.body.userId).toBe('00000000-0000-0000-0000-000000000001');
     expect(verifier.verify).not.toHaveBeenCalled();
     expect(users.findProfile).not.toHaveBeenCalled();
+  });
+
+  it('does not accept the dev-test token in production', async () => {
+    const previous = env.NODE_ENV;
+    env.NODE_ENV = 'production';
+    try {
+      vi.mocked(verifier.verify).mockRejectedValue(new TokenVerificationError('TOKEN_INVALID'));
+      const response = await request(app()).get('/protected')
+        .set('authorization', 'Bearer dev-test-token').expect(401);
+      expect(response.body.error.code).toBe('TOKEN_INVALID');
+      expect(verifier.verify).toHaveBeenCalledWith('dev-test-token');
+      expect(users.findProfile).not.toHaveBeenCalled();
+    } finally {
+      env.NODE_ENV = previous;
+    }
   });
 
   it.each([
