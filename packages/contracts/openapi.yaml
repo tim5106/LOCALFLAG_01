@@ -695,7 +695,7 @@ components:
       required: [transactionId, type, amount, balanceAfter, policyVersion, createdAt, checkInId]
       properties:
         transactionId: { type: string, format: uuid }
-        type: { type: string, enum: [CHECK_IN, PURCHASE, REVERSAL, ADMIN_ADJUSTMENT] }
+        type: { type: string, enum: [CHECK_IN, PURCHASE, REVERSAL, ADMIN_ADJUSTMENT, SIGNUP] }
         amount: { type: integer }
         balanceAfter: { type: integer, minimum: 0 }
         policyVersion: { type: string }

@@ -25,7 +25,7 @@ export interface CheckInHistoryItem {
 
 export interface LedgerHistoryItem {
   transactionId: string;
-  type: 'CHECK_IN' | 'PURCHASE' | 'REVERSAL' | 'ADMIN_ADJUSTMENT';
+  type: 'CHECK_IN' | 'PURCHASE' | 'REVERSAL' | 'ADMIN_ADJUSTMENT' | 'SIGNUP';
   amount: number;
   balanceAfter: number;
   policyVersion: string;
