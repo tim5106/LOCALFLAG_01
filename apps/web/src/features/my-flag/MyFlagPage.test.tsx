@@ -117,11 +117,9 @@ describe('MyFlagPage collection dashboard', () => {
     // 플래그 진행률 카드: 2 / 0
     expect(screen.getByText('2 / 0')).toBeTruthy();
 
-    // 포토로그 카드
-    expect(screen.getByText('통인동 한옥')).toBeTruthy();
-    expect(screen.getByText('계동 책방길')).toBeTruthy();
-    const img = screen.getByAltText('통인동 한옥') as HTMLImageElement;
-    expect(img.src).toBe('https://example.com/tongin.jpg');
+    // 필드 인증 포토로그 미노출 확인
+    expect(screen.queryByText('필드 인증 포토로그')).toBeNull();
+    expect(screen.queryByText('통인동 한옥')).toBeNull();
 
     // 스킨 목록: 오직 소유한 스킨만 노출 (2/3)
     expect(screen.getByText('깃발 스킨 보관함 (2/3 보유)')).toBeTruthy();
@@ -201,29 +199,6 @@ describe('MyFlagPage collection dashboard', () => {
     expect(useUiStore.getState().shopOpen).toBe(true);
   });
 
-  it('navigates to discovery tab when clicking "새로운 발견"', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes('/me/map')) {
-        return new Response(JSON.stringify({ data: { equippedFlagSkinId: null, visits: [] } }), { status: 200 });
-      }
-      if (url.includes('/me')) {
-        return new Response(JSON.stringify({ data: mockProfile }), { status: 200 });
-      }
-      if (url.includes('/flag-skins')) {
-        return new Response(JSON.stringify({ data: [] }), { status: 200 });
-      }
-      return new Response(JSON.stringify({}), { status: 404 });
-    }));
-
-    renderPage();
-
-    const discoverButton = await screen.findByRole('button', { name: /새로운 발견 탐색하기/ });
-    fireEvent.click(discoverButton);
-
-    expect(useUiStore.getState().activeTab).toBe('discovery');
-  });
-
   it('renders empty visits and empty owned skins state with CTA to shop', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -241,8 +216,7 @@ describe('MyFlagPage collection dashboard', () => {
 
     renderPage();
 
-    expect(await screen.findByText('아직 방문한 장소가 없습니다.')).toBeTruthy();
-    expect(screen.getByText('보유한 스킨이 없습니다.')).toBeTruthy();
+    expect(await screen.findByText('보유한 스킨이 없습니다.')).toBeTruthy();
     expect(screen.getByText('0개 지역 · 0개 플래그')).toBeTruthy();
     expect(screen.getByText('0 / 0')).toBeTruthy();
 

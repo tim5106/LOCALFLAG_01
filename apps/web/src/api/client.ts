@@ -3,6 +3,14 @@ import type { ApiErrorBody, ApiListResponse } from '../types/api';
 import { ApiRequestError, CheckInApiError } from '../types/api';
 import type { Spot } from '../types/spot';
 import { getAccessToken } from '../features/auth/auth';
+import {
+  INITIAL_MOCK_SKINS,
+  equipMockFlagSkin,
+  getEquippedSkinId,
+  getMockFlagSkins,
+  getSimulatedPointDeduction,
+  purchaseMockFlagSkin,
+} from '../features/point-shop/mock-skins';
 import { buildCheckInPayload, buildPrecheckPayload, type CheckInPosition, type CheckInResponse, type CheckInResult, type PrecheckResult } from '../features/check-in/api-types';
 
 export interface SpotQuery {
@@ -124,19 +132,100 @@ export async function createCheckIn(spotId: number | string, position: PositionI
   return body as CheckInResponse<CheckInResult>;
 }
 
-export async function getMe(): Promise<{ data: MeProfile }> { return authorizedGet('/me') as Promise<{ data: MeProfile }>; }
+export async function getMe(): Promise<{ data: MeProfile }> {
+  try {
+    const res = (await authorizedGet('/me')) as { data: MeProfile };
+    const deduction = getSimulatedPointDeduction();
+    const equipped = getEquippedSkinId();
+    return {
+      data: {
+        ...res.data,
+        pointBalance:
+          typeof res.data.pointBalance === 'number'
+            ? Math.max(0, res.data.pointBalance - deduction)
+            : res.data.pointBalance,
+        equippedFlagSkinId: equipped || res.data.equippedFlagSkinId || 'default-red',
+      },
+    };
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      throw error;
+    }
+    const deduction = getSimulatedPointDeduction();
+    const equipped = getEquippedSkinId();
+    return {
+      data: {
+        id: 'mock-user',
+        nickname: '로컬 탐험가',
+        pointBalance: Math.max(0, 1500 - deduction),
+        equippedFlagSkinId: equipped,
+      },
+    };
+  }
+}
 export async function getPointLedger() { return authorizedGet('/me/point-ledger'); }
-export async function getFlagSkins(): Promise<{ data: FlagSkin[] }> { return authorizedGet('/flag-skins') as Promise<{ data: FlagSkin[] }>; }
+export async function getFlagSkins(): Promise<{ data: FlagSkin[] }> {
+  try {
+    const res = (await authorizedGet('/flag-skins')) as { data: FlagSkin[] };
+    if (
+      Array.isArray(res?.data) &&
+      res.data.length === 2 &&
+      res.data.some((s) => s.id === 'default-red') &&
+      res.data.some((s) => s.id === 'explorer')
+    ) {
+      return { data: getMockFlagSkins() };
+    }
+    return res;
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      if (error.status === 401) {
+        return { data: getMockFlagSkins() };
+      }
+      throw error;
+    }
+    return { data: getMockFlagSkins() };
+  }
+}
 export async function getMyMap(): Promise<{ data: MyFlagMap }> { return authorizedGet('/me/map') as Promise<{ data: MyFlagMap }>; }
 export async function purchaseFlagSkin(skinId: string) {
-  return authorizedRequest(`/flag-skins/${encodeURIComponent(skinId)}/purchase`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() } });
+  const isMockCatalogSkin = INITIAL_MOCK_SKINS.some((s) => s.id === skinId);
+  try {
+    const res = await authorizedRequest(`/flag-skins/${encodeURIComponent(skinId)}/purchase`, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    });
+    if (isMockCatalogSkin) {
+      purchaseMockFlagSkin(skinId);
+    }
+    return res;
+  } catch (error) {
+    if (isMockCatalogSkin) {
+      return { data: purchaseMockFlagSkin(skinId) };
+    }
+    throw error;
+  }
 }
 
 export async function getNearbySpots(lat: number, lng: number, radiusM = 2_000, limit = 20) {
   return authorizedGet(`/spots/nearby?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radiusM=${radiusM}&limit=${limit}`) as Promise<ApiListResponse<Spot & { distanceM: number }>>;
 }
 export async function equipFlagSkin(skinId: string) {
-  return authorizedRequest('/me/equipped-flag-skin', { method: 'PUT', body: JSON.stringify({ skinId }) });
+  const isMockCatalogSkin = INITIAL_MOCK_SKINS.some((s) => s.id === skinId);
+  try {
+    const res = await authorizedRequest('/me/equipped-flag-skin', {
+      method: 'PUT',
+      body: JSON.stringify({ skinId }),
+    });
+    if (isMockCatalogSkin) {
+      equipMockFlagSkin(skinId);
+    }
+    return res;
+  } catch (error) {
+    if (isMockCatalogSkin) {
+      return { data: equipMockFlagSkin(skinId) };
+    }
+    throw error;
+  }
 }
 async function authorizedGet(path: string) { const response = await fetch(`${webEnv.apiBaseUrl}${path}`, { headers: { ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}) } }); const body = await response.json() as unknown; if (!response.ok) throw new ApiRequestError(response.status, body as ApiErrorBody); return body; }
 async function authorizedRequest(path: string, init: RequestInit = {}) {
