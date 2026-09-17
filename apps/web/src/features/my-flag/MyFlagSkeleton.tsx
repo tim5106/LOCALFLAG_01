@@ -55,22 +55,6 @@ export function MyFlagSkeleton() {
         </div>
       </div>
 
-      {/* 필드 인증 포토로그 */}
-      <div className="my-flag-section">
-        <div className="my-flag-section__heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Skeleton width="20px" height="20px" borderRadius="4px" />
-          <Skeleton width="130px" height="20px" />
-        </div>
-
-        <div className="my-flag-photolog-grid">
-          {[1, 2, 3].map((card) => (
-            <div key={card} className="my-flag-photolog-card" style={{ background: 'transparent' }}>
-              <Skeleton width="100%" height="100%" borderRadius="16px" />
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* 깃발 스킨 보관함 */}
       <div className="my-flag-section">
         <div className="my-flag-section__heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

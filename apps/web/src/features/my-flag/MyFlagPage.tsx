@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Camera, Check, ChevronRight, CircleUserRound, Compass, Flag, Info } from 'lucide-react';
+import { Check, ChevronRight, CircleUserRound, Compass, Flag, Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { equipFlagSkin, getFlagSkins, getMe, getMyMap } from '../../api/client';
 import { useUiStore } from '../../store/ui-store';
@@ -12,7 +12,6 @@ type MyMap = { equippedFlagSkinId: string | null; visits: Visit[] };
 
 export function MyFlagPage() {
   const queryClient = useQueryClient();
-  const setActiveTab = useUiStore((state) => state.setActiveTab);
   const openProfile = useUiStore((state) => state.openProfile);
   const openShop = useUiStore((state) => state.openShop);
   const myFlagTarget = useUiStore((state) => state.myFlagTarget);
@@ -21,10 +20,7 @@ export function MyFlagPage() {
 
   useEffect(() => {
     if (!myFlagTarget) return;
-    if (myFlagTarget === 'photolog') {
-      const el = document.getElementById('photolog-heading');
-      el?.scrollIntoView({ behavior: 'smooth' });
-    } else if (myFlagTarget === 'skins') {
+    if (myFlagTarget === 'skins') {
       const el = document.getElementById('skins-heading');
       el?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -202,47 +198,6 @@ export function MyFlagPage() {
               <small>개</small>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* 필드 인증 포토로그 */}
-      <section className="my-flag-section" aria-labelledby="photolog-heading">
-        <div className="my-flag-section__heading">
-          <Camera size={18} color="#D54D35" />
-          <h3 id="photolog-heading">필드 인증 포토로그</h3>
-        </div>
-
-        <div className="my-flag-photolog-grid">
-          {visits.length === 0 ? (
-            <div className="my-flag-empty-card">아직 방문한 장소가 없습니다.</div>
-          ) : (
-            visits.map((visit) => (
-              <article key={`${visit.spotId}-${visit.visitedAt}`} className="my-flag-photolog-card">
-                {visit.imageUrl ? (
-                  <img src={visit.imageUrl} alt={visit.spotTitle} className="my-flag-photolog-card__img" />
-                ) : (
-                  <div className="my-flag-photolog-card__placeholder">
-                    <Flag size={24} color="rgba(255, 255, 255, 0.4)" />
-                  </div>
-                )}
-                <div className="my-flag-photolog-card__overlay" />
-                <span className="my-flag-photolog-card__title">{visit.spotTitle}</span>
-              </article>
-            ))
-          )}
-
-          <button
-            type="button"
-            className="my-flag-photolog-discover"
-            onClick={() => setActiveTab('discovery')}
-            aria-label="새로운 발견 탐색하기"
-          >
-            <div className="my-flag-photolog-discover__icon">
-              <Camera size={20} color="#718079" />
-            </div>
-            <strong className="my-flag-photolog-discover__title">새로운 발견</strong>
-            <span className="my-flag-photolog-discover__sub">발자국 남기기</span>
-          </button>
         </div>
       </section>
 
