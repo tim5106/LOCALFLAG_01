@@ -3,6 +3,7 @@ import { ArrowLeft, Bookmark, ChevronDown, ChevronRight, Flag, Search, SlidersHo
 import { getSpots } from '../../api/client';
 import { SpotImage } from '../../components/SpotImage';
 import { useMe } from '../../hooks/useMe';
+import { useUiStore } from '../../store/ui-store';
 import type { ApiListResponse } from '../../types/api';
 import type { Spot } from '../../types/spot';
 import type { Ref } from 'react';
@@ -30,6 +31,7 @@ const POPULAR_CITIES: PopularCity[] = [
 ];
 
 export function DiscoverySearchPage({ onClose, closeButtonRef }: DiscoverySearchPageProps) {
+  const openShop = useUiStore((state) => state.openShop);
   const meQuery = useMe();
   const spotsQuery = useQuery<ApiListResponse<Spot>>({
     queryKey: ['spots', { areaCode: '1', sigunguCode: '23' }],
@@ -62,9 +64,14 @@ export function DiscoverySearchPage({ onClose, closeButtonRef }: DiscoverySearch
           <strong className="search-page-brand">Local Flag</strong>
         </div>
         <div className="search-page-header__right">
-          <span className="search-page-balance-tag" aria-label="보유 포인트">
+          <button
+            type="button"
+            className="search-page-balance-tag"
+            aria-label="보유 포인트"
+            onClick={openShop}
+          >
             {pointBalance}
-          </span>
+          </button>
         </div>
       </header>
 
@@ -289,4 +296,3 @@ export function DiscoverySearchPage({ onClose, closeButtonRef }: DiscoverySearch
     </div>
   );
 }
-

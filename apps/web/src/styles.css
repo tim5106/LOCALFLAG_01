@@ -308,6 +308,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 }
 
 .my-flag-hero-card {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -565,6 +569,36 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
   background: #FFFFFF;
   display: grid;
   place-items: center;
+}
+
+.my-flag-shop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: #FFFFFF;
+  border: 1px solid #DED9CD;
+  color: #183B33;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.my-flag-empty-shop-cta {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 16px;
+  border-radius: 12px;
+  background: #173F35;
+  color: #FFF8E9;
+  font-size: 13px;
+  font-weight: 700;
+  border: 0;
+  cursor: pointer;
 }
 
 .my-flag-photolog-grid {
@@ -1065,6 +1099,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (min-width: 600px) {
   .discovery-search-overlay { top: 28px; bottom: 28px; height: auto; max-height: 900px; }
   .discovery-search-sheet { border-radius: 28px; }
+  .discovery-page { min-height: var(--app-frame-height); }
   .bottom-nav { bottom: calc((100dvh - var(--app-frame-height)) / 2 + 16px); }
 }
 .discovery-account-state,

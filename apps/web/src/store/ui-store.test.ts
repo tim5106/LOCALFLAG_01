@@ -36,4 +36,41 @@ describe('ui store', () => {
     store.setActiveTab('check-in');
     expect(useUiStore.getState().profileOpen).toBe(false);
   });
+
+  it('manages shop open/close and preserves previous tab and profile state', () => {
+    const store = useUiStore.getState();
+    store.setActiveTab('discovery');
+    store.closeProfile();
+    expect(useUiStore.getState().shopOpen).toBe(false);
+
+    // 상점 열기
+    store.openShop();
+    expect(useUiStore.getState().shopOpen).toBe(true);
+    expect(useUiStore.getState().activeTab).toBe('discovery');
+
+    // 상점 닫기 -> 이전 탭 유지
+    store.closeShop();
+    expect(useUiStore.getState().shopOpen).toBe(false);
+    expect(useUiStore.getState().activeTab).toBe('discovery');
+
+    // 프로필 열린 상태에서 상점 진입
+    store.openProfile('discovery');
+    expect(useUiStore.getState().profileOpen).toBe(true);
+
+    store.openShop();
+    expect(useUiStore.getState().shopOpen).toBe(true);
+    expect(useUiStore.getState().profileOpen).toBe(true);
+
+    // 상점 닫기 -> 프로필 열림 상태 보존
+    store.closeShop();
+    expect(useUiStore.getState().shopOpen).toBe(false);
+    expect(useUiStore.getState().profileOpen).toBe(true);
+
+    // 탭 전환 시 상점 닫힘
+    store.openShop();
+    expect(useUiStore.getState().shopOpen).toBe(true);
+    store.setActiveTab('my-flag');
+    expect(useUiStore.getState().shopOpen).toBe(false);
+    expect(useUiStore.getState().activeTab).toBe('my-flag');
+  });
 });

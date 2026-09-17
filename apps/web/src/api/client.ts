@@ -19,6 +19,15 @@ export interface SpotQuery {
   limit?: number;
 }
 export interface MeProfile { id: string; nickname?: string | null; pointBalance?: number; equippedFlagSkinId?: string | null; }
+export interface FlagSkin {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  assetUrl: string;
+  owned: boolean;
+  equipped: boolean;
+}
 export interface MyFlagVisit { spotId: number; spotTitle: string; location: Spot['location']; visitedAt: string; rewardPoints: number; status: 'SUCCESS'; }
 export interface MyFlagMap { equippedFlagSkinId: string | null; visits: MyFlagVisit[]; }
 
@@ -117,7 +126,7 @@ export async function createCheckIn(spotId: number | string, position: PositionI
 
 export async function getMe(): Promise<{ data: MeProfile }> { return authorizedGet('/me') as Promise<{ data: MeProfile }>; }
 export async function getPointLedger() { return authorizedGet('/me/point-ledger'); }
-export async function getFlagSkins() { return authorizedGet('/flag-skins'); }
+export async function getFlagSkins(): Promise<{ data: FlagSkin[] }> { return authorizedGet('/flag-skins') as Promise<{ data: FlagSkin[] }>; }
 export async function getMyMap(): Promise<{ data: MyFlagMap }> { return authorizedGet('/me/map') as Promise<{ data: MyFlagMap }>; }
 export async function purchaseFlagSkin(skinId: string) {
   return authorizedRequest(`/flag-skins/${encodeURIComponent(skinId)}/purchase`, { method: 'POST', headers: { 'Idempotency-Key': crypto.randomUUID() } });

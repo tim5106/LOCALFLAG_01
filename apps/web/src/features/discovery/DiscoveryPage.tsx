@@ -16,6 +16,7 @@ export function DiscoveryPage() {
   const setActiveTab = useUiStore((store) => store.setActiveTab);
   const setSelectedSpot = useUiStore((store) => store.setSelectedSpot);
   const openProfile = useUiStore((store) => store.openProfile);
+  const openShop = useUiStore((store) => store.openShop);
   const discoveryView = useUiStore((store) => store.discoveryView);
   const setDiscoveryView = useUiStore((store) => store.setDiscoveryView);
   const [detailSpot, setDetailSpot] = useState<Spot | null>(null);
@@ -63,9 +64,14 @@ export function DiscoveryPage() {
           <h1>Local Flag</h1>
         </div>
         <div className="discovery-header__actions">
-          <strong className="discovery-balance" aria-label="보유 포인트">
+          <button
+            type="button"
+            className="discovery-balance"
+            aria-label="보유 포인트"
+            onClick={openShop}
+          >
             {meQuery.isPending ? '— P' : meQuery.isError ? '확인 불가' : `${(meQuery.profile?.pointBalance ?? 0).toLocaleString()} P`}
-          </strong>
+          </button>
           <button type="button" className="discovery-profile" aria-label="내 프로필" onClick={() => openProfile('discovery')}>
             <CircleUserRound size={20} />
           </button>

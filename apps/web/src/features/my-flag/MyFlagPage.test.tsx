@@ -39,6 +39,7 @@ const mockSkins = [
     name: 'Local Red',
     description: '기본 오리지널',
     price: 0,
+    assetUrl: 'https://example.com/red.svg',
     owned: true,
     equipped: true,
   },
@@ -47,6 +48,7 @@ const mockSkins = [
     name: 'Explorer',
     description: '나침반 문양',
     price: 800,
+    assetUrl: 'https://example.com/explorer.svg',
     owned: false,
     equipped: false,
   },
@@ -55,6 +57,7 @@ const mockSkins = [
     name: 'Forest Green',
     description: '자연의 색상',
     price: 500,
+    assetUrl: 'https://example.com/green.svg',
     owned: true,
     equipped: false,
   },
@@ -82,10 +85,10 @@ describe('MyFlagPage collection dashboard', () => {
   });
 
   beforeEach(() => {
-    useUiStore.setState({ activeTab: 'my-flag' });
+    useUiStore.setState({ activeTab: 'my-flag', shopOpen: false });
   });
 
-  it('renders profile points, visits count, collection progress, and skins correctly', async () => {
+  it('renders profile points, visits count, collection progress, and ONLY owned skins', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/me/map')) {
@@ -114,40 +117,30 @@ describe('MyFlagPage collection dashboard', () => {
     // 플래그 진행률 카드: 2 / 0
     expect(screen.getByText('2 / 0')).toBeTruthy();
 
-    // 등급별 뱃지
-    expect(screen.getByText('S')).toBeTruthy();
-    expect(screen.getByText('A')).toBeTruthy();
-    expect(screen.getByText('B')).toBeTruthy();
-    expect(screen.getByText('C')).toBeTruthy();
-
-    // 포토로그 카드: 이미지 있는 것 & 없는 것(플레이스홀더)
+    // 포토로그 카드
     expect(screen.getByText('통인동 한옥')).toBeTruthy();
     expect(screen.getByText('계동 책방길')).toBeTruthy();
     const img = screen.getByAltText('통인동 한옥') as HTMLImageElement;
     expect(img.src).toBe('https://example.com/tongin.jpg');
 
-    // 스킨 목록: 소유 및 장착 상태
+    // 스킨 목록: 오직 소유한 스킨만 노출 (2/3)
     expect(screen.getByText('깃발 스킨 보관함 (2/3 보유)')).toBeTruthy();
     expect(screen.getByText('Local Red')).toBeTruthy();
-    expect(screen.getByText('Explorer')).toBeTruthy();
     expect(screen.getByText('Forest Green')).toBeTruthy();
+    // 미보유 스킨인 Explorer는 마이 플래그 보관함에 노출되지 않음
+    expect(screen.queryByText('Explorer')).toBeNull();
 
-    // 액션 버튼 확인
+    // 액션 버튼: 장착 중 및 장착하기
     expect(screen.getByRole('button', { name: /Local Red 장착 중/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Explorer 800P 교환하기/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Forest Green 장착하기/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /교환하기/ })).toBeNull();
   });
 
-  it('handles purchasing and equipping a skin', async () => {
-    let purchasedSkinId = '';
+  it('handles equipping an owned skin', async () => {
     let equippedSkinId = '';
 
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes('/flag-skins/skin-2/purchase') && init?.method === 'POST') {
-        purchasedSkinId = 'skin-2';
-        return new Response(JSON.stringify({ data: { success: true } }), { status: 200 });
-      }
       if (url.includes('/me/equipped-flag-skin') && init?.method === 'PUT') {
         const body = JSON.parse(String(init.body));
         equippedSkinId = body.skinId;
@@ -167,23 +160,45 @@ describe('MyFlagPage collection dashboard', () => {
 
     renderPage();
 
-    // 스킨 구매
-    const purchaseButton = await screen.findByRole('button', { name: /Explorer 800P 교환하기/ });
-    fireEvent.click(purchaseButton);
-
-    await waitFor(() => {
-      expect(purchasedSkinId).toBe('skin-2');
-      expect(screen.getByText('Explorer을 구매했습니다.')).toBeTruthy();
-    });
-
     // 스킨 장착
-    const equipButton = screen.getByRole('button', { name: /Forest Green 장착하기/ });
+    const equipButton = await screen.findByRole('button', { name: /Forest Green 장착하기/ });
     fireEvent.click(equipButton);
 
     await waitFor(() => {
       expect(equippedSkinId).toBe('skin-3');
       expect(screen.getByText('Forest Green을 장착했습니다.')).toBeTruthy();
     });
+  });
+
+  it('opens shop when clicking balance chip, hero card, or section shop button', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/me/map')) return new Response(JSON.stringify({ data: { equippedFlagSkinId: 'skin-1', visits: mockVisits } }), { status: 200 });
+      if (url.includes('/me')) return new Response(JSON.stringify({ data: mockProfile }), { status: 200 });
+      if (url.includes('/flag-skins')) return new Response(JSON.stringify({ data: mockSkins }), { status: 200 });
+      return new Response(JSON.stringify({}), { status: 404 });
+    }));
+
+    renderPage();
+
+    // 1. 헤더 포인트 칩 클릭
+    const balanceChip = await screen.findByRole('button', { name: '보유 포인트' });
+    fireEvent.click(balanceChip);
+    expect(useUiStore.getState().shopOpen).toBe(true);
+
+    useUiStore.setState({ shopOpen: false });
+
+    // 2. 히어로 카드 클릭
+    const heroCard = screen.getByRole('button', { name: '컬렉션 레벨 및 포인트' });
+    fireEvent.click(heroCard);
+    expect(useUiStore.getState().shopOpen).toBe(true);
+
+    useUiStore.setState({ shopOpen: false });
+
+    // 3. 스킨 섹션 헤더 '상점 보기' 버튼 클릭
+    const shopBtn = screen.getByRole('button', { name: '스킨 상점 보기' });
+    fireEvent.click(shopBtn);
+    expect(useUiStore.getState().shopOpen).toBe(true);
   });
 
   it('navigates to discovery tab when clicking "새로운 발견"', async () => {
@@ -209,7 +224,7 @@ describe('MyFlagPage collection dashboard', () => {
     expect(useUiStore.getState().activeTab).toBe('discovery');
   });
 
-  it('renders empty visits and empty skins state correctly', async () => {
+  it('renders empty visits and empty owned skins state with CTA to shop', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes('/me/map')) {
@@ -227,9 +242,14 @@ describe('MyFlagPage collection dashboard', () => {
     renderPage();
 
     expect(await screen.findByText('아직 방문한 장소가 없습니다.')).toBeTruthy();
-    expect(screen.getByText('등록된 스킨이 없습니다.')).toBeTruthy();
+    expect(screen.getByText('보유한 스킨이 없습니다.')).toBeTruthy();
     expect(screen.getByText('0개 지역 · 0개 플래그')).toBeTruthy();
     expect(screen.getByText('0 / 0')).toBeTruthy();
+
+    // CTA 클릭 시 상점 열림
+    const ctaBtn = screen.getByRole('button', { name: '스킨 상점 둘러보기' });
+    fireEvent.click(ctaBtn);
+    expect(useUiStore.getState().shopOpen).toBe(true);
   });
 
   it('renders skeleton UI during loading state', () => {
@@ -241,7 +261,6 @@ describe('MyFlagPage collection dashboard', () => {
   });
 
   it('renders loading and error states', async () => {
-    // 1. Error state (profile error)
     vi.stubGlobal('fetch', vi.fn(async () => {
       return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
     }));

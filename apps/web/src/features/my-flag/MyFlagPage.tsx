@@ -1,10 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Camera, Check, CircleUserRound, Compass, Flag, Info } from 'lucide-react';
+import { Camera, Check, ChevronRight, CircleUserRound, Compass, Flag, Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { equipFlagSkin, getFlagSkins, getMe, getMyMap, purchaseFlagSkin } from '../../api/client';
+import { equipFlagSkin, getFlagSkins, getMe, getMyMap } from '../../api/client';
 import { useUiStore } from '../../store/ui-store';
 import { MyFlagSkeleton } from './MyFlagSkeleton';
-
 
 type Profile = { nickname?: string | null; pointBalance?: number; equippedFlagSkinId?: string | null };
 type Skin = { id: string; name?: string; description?: string; price?: number; owned?: boolean; equipped?: boolean; isEquipped?: boolean };
@@ -15,6 +14,7 @@ export function MyFlagPage() {
   const queryClient = useQueryClient();
   const setActiveTab = useUiStore((state) => state.setActiveTab);
   const openProfile = useUiStore((state) => state.openProfile);
+  const openShop = useUiStore((state) => state.openShop);
   const myFlagTarget = useUiStore((state) => state.myFlagTarget);
   const clearMyFlagTarget = useUiStore((state) => state.clearMyFlagTarget);
   const [toast, setToast] = useState('');
@@ -40,7 +40,7 @@ export function MyFlagPage() {
   const myMap = (mapQuery.data as { data?: MyMap } | undefined)?.data;
   const visits = myMap?.visits ?? [];
 
-  const ownedSkins = skins.filter((skin) => skin.owned === true).length;
+  const ownedSkinsList = skins.filter((skin) => skin.owned === true);
   const equippedSkinId = profile?.equippedFlagSkinId ?? myMap?.equippedFlagSkinId ?? null;
 
   const isLoading = profileQuery.isPending || skinsQuery.isPending || mapQuery.isPending;
@@ -52,16 +52,6 @@ export function MyFlagPage() {
       queryClient.invalidateQueries({ queryKey: ['flag-skins'] }),
       queryClient.invalidateQueries({ queryKey: ['my-map'] }),
     ]);
-
-  const handlePurchase = async (skin: Skin) => {
-    try {
-      await purchaseFlagSkin(skin.id);
-      await refreshAccount();
-      setToast(`${skin.name ?? '스킨'}을 구매했습니다.`);
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : '스킨 구매에 실패했습니다.');
-    }
-  };
 
   const handleEquip = async (skin: Skin) => {
     try {
@@ -103,9 +93,14 @@ export function MyFlagPage() {
           <h1>Local Flag</h1>
         </div>
         <div className="discovery-header__actions">
-          <strong className="discovery-balance" aria-label="보유 포인트">
+          <button
+            type="button"
+            className="discovery-balance"
+            aria-label="보유 포인트"
+            onClick={openShop}
+          >
             {profileQuery.isPending ? '— P' : profileQuery.isError ? '확인 불가' : `${(profile?.pointBalance ?? 0).toLocaleString()} P`}
-          </strong>
+          </button>
           <button
             type="button"
             className="discovery-profile"
@@ -132,8 +127,13 @@ export function MyFlagPage() {
         </h2>
       </div>
 
-      {/* 컬렉션 레벨 & 포인트 카드 */}
-      <section className="my-flag-hero-card" aria-label="컬렉션 레벨 및 포인트">
+      {/* 컬렉션 레벨 & 포인트 카드 (상점 진입 버튼) */}
+      <button
+        type="button"
+        className="my-flag-hero-card"
+        aria-label="컬렉션 레벨 및 포인트"
+        onClick={openShop}
+      >
         <div className="my-flag-hero-card__left">
           <div className="my-flag-hero-card__badge">
             <span className="my-flag-hero-card__badge-icon">
@@ -150,7 +150,7 @@ export function MyFlagPage() {
             <span>P</span>
           </div>
         </div>
-      </section>
+      </button>
 
       {/* 플래그 진행률 카드 */}
       <section className="my-flag-progress-card" aria-label="플래그 수집 현황">
@@ -251,30 +251,40 @@ export function MyFlagPage() {
         <div className="my-flag-section__heading my-flag-section__heading--between">
           <div className="my-flag-section__heading-title">
             <h3 id="skins-heading">
-              깃발 스킨 보관함 ({ownedSkins}/{skins.length} 보유)
+              깃발 스킨 보관함 ({ownedSkinsList.length}/{skins.length} 보유)
             </h3>
           </div>
-          <span className="my-flag-section__info-icon" title="보유 포인트로 스킨을 구매하고 장착할 수 있습니다.">
-            <Info size={16} color="#718079" />
-          </span>
+          <button
+            type="button"
+            className="my-flag-shop-btn"
+            onClick={openShop}
+            aria-label="스킨 상점 보기"
+          >
+            <span>상점 보기</span>
+            <ChevronRight size={14} />
+          </button>
         </div>
 
-        {skins.length === 0 ? (
+        {ownedSkinsList.length === 0 ? (
           <div className="my-flag-empty-card" role="status">
-            등록된 스킨이 없습니다.
+            <p>보유한 스킨이 없습니다.</p>
+            <button
+              type="button"
+              className="my-flag-empty-shop-cta"
+              onClick={openShop}
+            >
+              스킨 상점 둘러보기
+            </button>
           </div>
         ) : (
           <div className="my-flag-skin-grid">
-            {skins.map((skin) => {
-              const owned = skin.owned === true;
+            {ownedSkinsList.map((skin) => {
               const equipped = skin.equipped === true || skin.isEquipped === true || equippedSkinId === skin.id;
 
               return (
                 <article
                   key={skin.id}
-                  className={`my-flag-skin-card ${equipped ? 'my-flag-skin-card--equipped' : ''} ${
-                    !owned ? 'my-flag-skin-card--locked' : ''
-                  }`}
+                  className={`my-flag-skin-card ${equipped ? 'my-flag-skin-card--equipped' : ''}`}
                 >
                   <div className="my-flag-skin-card__preview">
                     <div className="my-flag-skin-card__icon-circle">
@@ -286,7 +296,7 @@ export function MyFlagPage() {
                   <div className="my-flag-skin-card__info">
                     <strong className="my-flag-skin-card__name">{skin.name ?? skin.id}</strong>
                     <span className="my-flag-skin-card__desc">
-                      {equipped ? '장착 중' : owned ? (skin.description ?? '보유 중') : `${skin.price ?? 0}P`}
+                      {equipped ? '장착 중' : (skin.description ?? '보유 중')}
                     </span>
                   </div>
 
@@ -301,7 +311,7 @@ export function MyFlagPage() {
                         <Check size={12} />
                         <span>장착 중</span>
                       </button>
-                    ) : owned ? (
+                    ) : (
                       <button
                         type="button"
                         className="my-flag-skin-btn my-flag-skin-btn--equip"
@@ -309,16 +319,6 @@ export function MyFlagPage() {
                         aria-label={`${skin.name ?? '스킨'} 장착하기`}
                       >
                         <span>장착하기</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="my-flag-skin-btn my-flag-skin-btn--purchase"
-                        onClick={() => handlePurchase(skin)}
-                        aria-label={`${skin.name ?? '스킨'} ${skin.price ?? 0}P 교환하기`}
-                      >
-                        <strong>{skin.price ?? 0}</strong>
-                        <span>P 교환</span>
                       </button>
                     )}
                   </div>
