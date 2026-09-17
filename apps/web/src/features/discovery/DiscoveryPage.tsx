@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, CircleUserRound, Flag, Search, Sprout } from 'lucide-react';
+import { ArrowRight, CircleUserRound, Flag, Search, Sprout, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { getMyMap, getSpots, type MyFlagMap } from '../../api/client';
 import { MapPreview } from '../../components/MapPreview';
@@ -29,7 +29,7 @@ export function DiscoveryPage() {
   });
   const mapQuery = useQuery<{ data: MyFlagMap }>({ queryKey: ['my-map'], queryFn: getMyMap, retry: false });
   const spots = (spotsQuery.data?.data ?? []).filter((spot) => spot.geometryType !== 'EXCLUDE');
-  const activeSpot = selectedSpot ?? spots[0] ?? null;
+  const activeSpot = selectedSpot ?? null;
   const visitedSpotIds = useMemo(
     () => new Set((mapQuery.data?.data?.visits ?? []).map((visit) => visit.spotId)),
     [mapQuery.data]
@@ -108,47 +108,52 @@ export function DiscoveryPage() {
             visitedSpotIds={visitedSpotIds}
             equippedSkinId={equippedSkinId}
             onSelect={setSelectedSpot}
+            onDeselect={() => setSelectedSpot(null)}
             onUserLocationChange={setUserLocation}
           />
         </div>
-        {activeSpot && (
-          <button type="button" className="discovery-map-callout" onClick={() => setSelectedSpot(activeSpot)}>
-            <strong data-grade={activeSpot.grade ?? 'A'}>{activeSpot.grade ?? 'A'}</strong>
-            <span>{activeSpot.title}</span>
-            {activeSpot.estimatedReward !== undefined && <em>+{activeSpot.estimatedReward}P</em>}
-          </button>
-        )}
         {spotsQuery.isPending && <div className="discovery-map-state" role="status">플래그 지도를 불러오는 중...</div>}
         {spotsQuery.isError && <div className="discovery-map-state discovery-map-state--error" role="alert">지도를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</div>}
         {!spotsQuery.isPending && !spotsQuery.isError && spots.length === 0 && <div className="discovery-map-state" role="status">표시할 플래그가 없어요.</div>}
+
+        {activeSpot && (
+          <div className="discovery-actions">
+            <div className="discovery-selected-card-wrap">
+              <button type="button" className="discovery-selected-card" aria-label={`${activeSpot.title} 상세 보기`} onClick={() => setDetailSpot(activeSpot)}>
+                <span className="discovery-selected-card__icon"><Sprout size={27} /></span>
+                <span className="discovery-selected-card__body">
+                  <span>{activeSpot.grade ?? 'A'}등급</span>
+                  <strong>{activeSpot.title}</strong>
+                  <small>{activeSpot.address || '주소 정보 없음'}{distance ? ` · ${distance}` : ''}</small>
+                </span>
+                {activeSpot.estimatedReward !== undefined && <b>+{activeSpot.estimatedReward} P</b>}
+              </button>
+              <button
+                type="button"
+                className="discovery-selected-card__close"
+                aria-label="장소 선택 해제"
+                onClick={() => setSelectedSpot(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <button
+              type="button"
+              className={`discovery-check-in-button${isSpotVisited ? ' discovery-check-in-button--completed' : ''}`}
+              onClick={startCheckIn}
+              disabled={!checkInAvailable || isSpotVisited}
+              aria-describedby={!checkInAvailable ? 'check-in-unavailable' : isSpotVisited ? 'check-in-completed' : undefined}
+            >
+              <Flag size={17} fill="currentColor" />
+              <span>현장 인증하기</span>
+              <ArrowRight size={20} />
+            </button>
+            {!checkInAvailable && <p id="check-in-unavailable" className="discovery-check-in-note">이 장소는 현장 인증을 지원하지 않아요.</p>}
+            {checkInAvailable && isSpotVisited && <p id="check-in-completed" className="discovery-check-in-note">이미 인증한 장소입니다.</p>}
+          </div>
+        )}
       </section>
 
-      {activeSpot && (
-        <div className="discovery-actions">
-          <button type="button" className="discovery-selected-card" aria-label={`${activeSpot.title} 상세 보기`} onClick={() => setDetailSpot(activeSpot)}>
-            <span className="discovery-selected-card__icon"><Sprout size={27} /></span>
-            <span className="discovery-selected-card__body">
-              <span>{activeSpot.grade ?? 'A'}등급</span>
-              <strong>{activeSpot.title}</strong>
-              <small>{activeSpot.address || '주소 정보 없음'}{distance ? ` · ${distance}` : ''}</small>
-            </span>
-            {activeSpot.estimatedReward !== undefined && <b>+{activeSpot.estimatedReward} P</b>}
-          </button>
-          <button
-            type="button"
-            className={`discovery-check-in-button${isSpotVisited ? ' discovery-check-in-button--completed' : ''}`}
-            onClick={startCheckIn}
-            disabled={!checkInAvailable || isSpotVisited}
-            aria-describedby={!checkInAvailable ? 'check-in-unavailable' : isSpotVisited ? 'check-in-completed' : undefined}
-          >
-            <Flag size={17} fill="currentColor" />
-            <span>현장 인증하기</span>
-            <ArrowRight size={20} />
-          </button>
-          {!checkInAvailable && <p id="check-in-unavailable" className="discovery-check-in-note">이 장소는 현장 인증을 지원하지 않아요.</p>}
-          {checkInAvailable && isSpotVisited && <p id="check-in-completed" className="discovery-check-in-note">이미 인증한 장소입니다.</p>}
-        </div>
-      )}
       <DiscoverySearchSheet open={isSearchOpen} onClose={closeSearch} />
     </main>
   );
