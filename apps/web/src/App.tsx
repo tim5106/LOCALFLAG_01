@@ -11,6 +11,8 @@ import { CheckInTestPage } from './features/check-in/CheckInTestPage';
 import { ProfilePage } from './features/profile/ProfilePage';
 import { PointShopPage } from './features/point-shop/PointShopPage';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 const pages = {
   discovery: DiscoveryPage,
   'check-in': CheckInPage,
@@ -18,6 +20,7 @@ const pages = {
 };
 
 export function App() {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(getStoredUser);
   const { activeTab, setActiveTab, setDiscoveryView, profileOpen, closeProfile, shopOpen, closeShop } = useUiStore();
   if (window.location.pathname === '/check-in/test' && import.meta.env.DEV) return <div className="app-shell"><div className="app-frame"><CheckInTestPage /></div></div>;
@@ -32,13 +35,31 @@ export function App() {
     setActiveTab(tab);
   };
 
-  if (!user) return <div className="app-shell"><div className="app-frame"><LoginPage onSignedIn={() => setUser(getStoredUser())} /></div></div>;
+  const handleSignOut = () => {
+    queryClient.clear();
+    setUser(null);
+  };
+
+  if (!user) {
+    return (
+      <div className="app-shell">
+        <div className="app-frame">
+          <LoginPage
+            onSignedIn={() => {
+              queryClient.clear();
+              setUser(getStoredUser());
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
   return (
     <AppShell activeTab={activeTab} onTabChange={handleTabChange}>
       {shopOpen ? (
         <PointShopPage />
       ) : profileOpen ? (
-        <ProfilePage onSignOut={() => setUser(null)} />
+        <ProfilePage onSignOut={handleSignOut} />
       ) : (
         <ActivePage />
       )}

@@ -76,6 +76,8 @@ export function getStoredUser(): AuthUser | null {
 export function getAccessToken() { return getStoredUser()?.accessToken; }
 export function ensureTestAuthToken() {
   if (!canUseDevelopmentAuth()) throw new Error('Development authentication is disabled.');
+  const existing = getAccessToken();
+  if (existing) return existing;
   localStorage.setItem(storageKey, JSON.stringify({ id: 'dev-test-user', email: 'check-in-test@local-flag.dev', accessToken: devTestToken }));
   return devTestToken;
 }

@@ -1,17 +1,15 @@
 import { Navigation } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import * as maptilersdk from '@maptiler/sdk';
-import '@maptiler/sdk/dist/maptiler-sdk.css';
-import { getMapTilerStyleUrl, webEnv } from '../config/env';
+import { webEnv } from '../config/env';
 import type { Spot } from '../types/spot';
 import { calculateDistanceMeters, CHECK_IN_RADIUS_METERS } from '../features/check-in/distance';
-import { createGeoJsonCircle } from '../lib/maptiler-circle';
-import koreaInvertedMask from '../assets/korea-inverted-mask.json';
 
-const KOREA_BOUNDS: [[number, number], [number, number]] = [
-  [123.0, 32.5],
-  [133.0, 39.5],
-];
+declare global {
+  interface Window {
+    kakao?: any;
+    __handleSpotClick?: (spotId: string) => void;
+  }
+}
 
 interface Coordinates {
   lat: number;
@@ -62,199 +60,135 @@ export function getCheckInCircleOptions(center: unknown, radius: number) {
   return { center, radius, strokeWeight: 2, strokeColor: '#2563EB', strokeOpacity: 0.7, fillColor: '#60A5FA', fillOpacity: 0.15 };
 }
 
-const CHECKIN_CIRCLE_SOURCE = 'checkin-circle-source';
-const CHECKIN_CIRCLE_FILL = 'checkin-circle-fill';
-const CHECKIN_CIRCLE_LINE = 'checkin-circle-line';
-
-export function CheckInMap({ position, spots = [], selectedSpot: _selectedSpot, onSelect, onMapClick, onLocate }: Props) {
+export function CheckInMap({ position, spots = [], selectedSpot, onSelect, onMapClick, onLocate }: Props) {
   const mapElement = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maptilersdk.Map | null>(null);
-  const userMarkerRef = useRef<maptilersdk.Marker | null>(null);
-  const spotMarkersRef = useRef<Map<string, maptilersdk.Marker>>(new Map());
+  const mapRef = useRef<any>(null);
+  const userOverlayRef = useRef<any>(null);
+  const circleRef = useRef<any>(null);
+  const overlaysRef = useRef<Map<string, any>>(new Map());
 
+  const spotsRef = useRef<Spot[]>(spots);
   const positionRef = useRef(position);
   const onSelectRef = useRef(onSelect);
-  positionRef.current = position;
   onSelectRef.current = onSelect;
+  spotsRef.current = spots;
+  positionRef.current = position;
 
   const [state, setState] = useState<'loading' | 'ready' | 'fallback' | 'error'>(
-    webEnv.maptilerApiKey ? 'loading' : 'fallback'
+    webEnv.kakaoMapAppKey ? 'loading' : 'fallback'
   );
   const [rangeNotice, setRangeNotice] = useState('');
 
-  // Initialize Map
+  // 1. 마커 클릭 이벤트 핸들러 등록
   useEffect(() => {
-    if (!webEnv.maptilerApiKey || !mapElement.current) return;
-
-    maptilersdk.config.apiKey = webEnv.maptilerApiKey;
-
-    let map: maptilersdk.Map | null = null;
-    try {
-      const initialCenter: [number, number] = position ? [position.lng, position.lat] : [126.98, 37.58];
-      map = new maptilersdk.Map({
-        container: mapElement.current,
-        style: getMapTilerStyleUrl(),
-        center: initialCenter,
-        zoom: 16,
-        dragPan: false, // Locked drag for check-in experience
-        scrollZoom: true,
-        maxBounds: KOREA_BOUNDS,
-        minZoom: 5.5,
-        navigationControl: false,
-        geolocateControl: false,
-      });
-      mapRef.current = map;
-    } catch (err) {
-      console.error('[CheckInMap] Failed to construct MapTiler:', err);
-      setState('error');
-      return;
-    }
-
-    map.on('load', () => {
-      // Apply South Korea Inverted Mask (Hide Ocean and foreign territories)
-      if (!map.getSource('korea-inverted-mask')) {
-        map.addSource('korea-inverted-mask', {
-          type: 'geojson',
-          data: koreaInvertedMask as any,
-        });
-        map.addLayer({
-          id: 'korea-mask-fill',
-          type: 'fill',
-          source: 'korea-inverted-mask',
-          paint: {
-            'fill-color': '#F7F4EC',
-            'fill-opacity': 1,
-          },
-        });
-        map.addLayer({
-          id: 'korea-mask-border',
-          type: 'line',
-          source: 'korea-inverted-mask',
-          paint: {
-            'line-color': 'rgba(24, 59, 51, 0.25)',
-            'line-width': 1.5,
-          },
-        });
+    window.__handleSpotClick = (spotId) => {
+      const targetSpot = spotsRef.current.find(
+        (spot) =>
+          String(spot.id) === String(spotId) ||
+          String((spot as any).spotId) === String(spotId) ||
+          String((spot as any).contentid) === String(spotId)
+      );
+      const targetPosition = positionRef.current;
+      if (targetSpot && getSpotClickResult(targetSpot, targetPosition) === 'SELECT') {
+        setRangeNotice('');
+        onSelectRef.current?.(targetSpot);
+      } else {
+        setRangeNotice('인증 반경 안으로 이동해주세요');
+        if (targetSpot) {
+          onSelectRef.current?.(targetSpot);
+        }
       }
-
-      setState('ready');
-      map?.resize();
-      requestAnimationFrame(() => map?.resize());
-    });
-
-    map.on('error', (e) => {
-      console.warn('[CheckInMap] MapTiler runtime notice:', e);
-    });
-
+    };
     return () => {
-      mapRef.current = null;
-      map?.remove();
+      delete window.__handleSpotClick;
     };
   }, []);
 
-  // Map Click handler
+  // 2. 카카오 지도 SDK 동적 로드 및 초기화
   useEffect(() => {
-    const map = mapRef.current;
-    if (state !== 'ready' || !map || !onMapClick) return;
+    if (!webEnv.kakaoMapAppKey || !mapElement.current) return;
 
-    const clickHandler = (e: maptilersdk.MapMouseEvent) => {
-      onMapClick(e.lngLat.lat, e.lngLat.lng);
-    };
+    const existing = document.getElementById('kakao-maps-sdk') as HTMLScriptElement | null;
+    const script = existing ?? document.createElement('script');
+    script.id = 'kakao-maps-sdk';
+    script.async = true;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(webEnv.kakaoMapAppKey)}&autoload=false`;
 
-    map.on('click', clickHandler);
-    return () => {
-      map.off('click', clickHandler);
-    };
-  }, [state, onMapClick]);
-
-  // Keep center fixed to user location when zooming
-  useEffect(() => {
-    const map = mapRef.current;
-    if (state !== 'ready' || !map) return;
-
-    const handleZoom = () => {
-      const currentPos = positionRef.current;
-      if (currentPos) {
-        map.setCenter([currentPos.lng, currentPos.lat]);
+    const initialize = () => {
+      if (!window.kakao || !mapElement.current) {
+        setState('error');
+        return;
       }
+      window.kakao.maps.load(() => {
+        if (!window.kakao || !mapElement.current) return;
+        const isFarAway = position && calculateDistanceMeters(position.lat, position.lng, 37.58, 126.98) > 3000;
+        const initialCenter = position && !isFarAway
+          ? new window.kakao.maps.LatLng(position.lat, position.lng)
+          : selectedSpot?.location
+          ? new window.kakao.maps.LatLng(selectedSpot.location.lat, selectedSpot.location.lng)
+          : new window.kakao.maps.LatLng(37.58, 126.98);
+
+        mapRef.current = new window.kakao.maps.Map(mapElement.current, {
+          center: initialCenter,
+          level: 4,
+        });
+        setState('ready');
+      });
     };
 
-    map.on('zoom', handleZoom);
-    return () => {
-      map.off('zoom', handleZoom);
-    };
-  }, [state]);
+    if (!existing) {
+      script.addEventListener('load', initialize, { once: true });
+      script.addEventListener('error', () => setState('error'), { once: true });
+      document.head.appendChild(script);
+    } else if (window.kakao?.maps?.load) {
+      initialize();
+    } else {
+      script.addEventListener('load', initialize, { once: true });
+      script.addEventListener('error', () => setState('error'), { once: true });
+    }
+  }, []);
 
-  // Update user position & circle
+  // 3. 사용자 위치 변경 시 지도 중심 이동 및 인증 반경 원 표출
   useEffect(() => {
-    const map = mapRef.current;
-    if (state !== 'ready' || !position || !map) return;
+    if (state !== 'ready' || !position || !window.kakao || !mapRef.current) return;
 
-    const userLngLat: [number, number] = [position.lng, position.lat];
-    map.setCenter(userLngLat);
+    const point = new window.kakao.maps.LatLng(position.lat, position.lng);
+    const radius = CHECK_IN_RADIUS_METERS;
+    mapRef.current.setCenter(point);
 
-    if (userMarkerRef.current) {
-      userMarkerRef.current.setLngLat(userLngLat);
+    if (userOverlayRef.current) {
+      userOverlayRef.current.setPosition(point);
     } else {
       const dot = document.createElement('div');
       dot.className = 'user-location-dot';
-      userMarkerRef.current = new maptilersdk.Marker({
-        element: dot,
-        anchor: 'center',
-      })
-        .setLngLat(userLngLat)
-        .addTo(map);
-    }
-
-    const circleGeoJson = createGeoJsonCircle(userLngLat, CHECK_IN_RADIUS_METERS);
-    const existingSource = map.getSource(CHECKIN_CIRCLE_SOURCE) as maptilersdk.GeoJSONSource | undefined;
-
-    if (existingSource) {
-      existingSource.setData(circleGeoJson);
-    } else if (map.isStyleLoaded()) {
-      map.addSource(CHECKIN_CIRCLE_SOURCE, {
-        type: 'geojson',
-        data: circleGeoJson,
-      });
-      map.addLayer({
-        id: CHECKIN_CIRCLE_FILL,
-        type: 'fill',
-        source: CHECKIN_CIRCLE_SOURCE,
-        paint: {
-          'fill-color': '#60A5FA',
-          'fill-opacity': 0.15,
-        },
-      });
-      map.addLayer({
-        id: CHECKIN_CIRCLE_LINE,
-        type: 'line',
-        source: CHECKIN_CIRCLE_SOURCE,
-        paint: {
-          'line-color': '#2563EB',
-          'line-width': 2,
-          'line-opacity': 0.7,
-        },
+      userOverlayRef.current = new window.kakao.maps.CustomOverlay({
+        map: mapRef.current,
+        position: point,
+        content: dot,
+        yAnchor: 0.5,
       });
     }
+
+    circleRef.current?.setMap(null);
+    circleRef.current = new window.kakao.maps.Circle({
+      map: mapRef.current,
+      ...getCheckInCircleOptions(point, radius),
+    });
 
     return () => {
-      if (map.getLayer(CHECKIN_CIRCLE_LINE)) map.removeLayer(CHECKIN_CIRCLE_LINE);
-      if (map.getLayer(CHECKIN_CIRCLE_FILL)) map.removeLayer(CHECKIN_CIRCLE_FILL);
-      if (map.getSource(CHECKIN_CIRCLE_SOURCE)) map.removeSource(CHECKIN_CIRCLE_SOURCE);
+      circleRef.current?.setMap(null);
+      circleRef.current = null;
     };
   }, [position, state]);
 
-  // Update Spot Markers
+  // 4. 주변 관광지 뱃지 오버레이 갱신
   useEffect(() => {
-    const map = mapRef.current;
-    if (state !== 'ready' || !map) return;
-
+    if (state !== 'ready' || !window.kakao || !mapRef.current) return;
     const activeIds = new Set<string>();
 
     spots.forEach((spot) => {
       const coordinates = getSpotCoordinates(spot);
       if (spot.geometryType === 'EXCLUDE' || !coordinates) return;
-
       const key = String(spot.id);
       activeIds.add(key);
 
@@ -262,59 +196,56 @@ export function CheckInMap({ position, spots = [], selectedSpot: _selectedSpot, 
         ? calculateDistanceMeters(position.lat, position.lng, coordinates.lat, coordinates.lng)
         : Infinity;
       const status = getSpotMarkerStatus(spot, distance, spot.checkInRadiusM ?? CHECK_IN_RADIUS_METERS);
+      const isSelected = selectedSpot?.id === spot.id;
       const badgeText = `${status === 'COMPLETED' ? '✅' : status === 'AVAILABLE' ? '🟢' : status === 'PENDING' ? '⏳' : '🔒'} ${spot.title}${status === 'PENDING' ? ' (심사중...)' : ''}`;
+      const content = `<div class="tourism-badge tourism-badge--${status.toLowerCase()} ${isSelected ? 'tourism-badge--selected' : ''}" onclick="event.stopPropagation(); window.__handleSpotClick('${spot.id}');" style="cursor:pointer;pointer-events:auto;position:relative;z-index:9999;">${badgeText}</div>`;
 
-      let marker = spotMarkersRef.current.get(key);
-
-      if (!marker) {
-        const badgeEl = document.createElement('div');
-        badgeEl.className = `tourism-badge tourism-badge--${status.toLowerCase()}`;
-        badgeEl.textContent = badgeText;
-        badgeEl.style.cursor = 'pointer';
-        badgeEl.style.pointerEvents = 'auto';
-
-        badgeEl.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const targetPosition = positionRef.current;
-          if (getSpotClickResult(spot, targetPosition) === 'SELECT') {
-            setRangeNotice('');
-            onSelectRef.current?.(spot);
-          } else {
-            setRangeNotice('인증 반경 안으로 이동해주세요');
-          }
-        });
-
-        marker = new maptilersdk.Marker({
-          element: badgeEl,
-          anchor: 'bottom',
-        })
-          .setLngLat([coordinates.lng, coordinates.lat])
-          .addTo(map);
-
-        spotMarkersRef.current.set(key, marker);
+      const point = new window.kakao.maps.LatLng(coordinates.lat, coordinates.lng);
+      const existing = overlaysRef.current.get(key);
+      if (existing) {
+        existing.setPosition(point);
+        existing.setContent(content);
       } else {
-        const badgeEl = marker.getElement();
-        badgeEl.className = `tourism-badge tourism-badge--${status.toLowerCase()}`;
-        badgeEl.textContent = badgeText;
-        marker.setLngLat([coordinates.lng, coordinates.lat]);
+        overlaysRef.current.set(
+          key,
+          new window.kakao.maps.CustomOverlay({
+            map: mapRef.current,
+            position: point,
+            content,
+            yAnchor: 1,
+            clickable: true,
+          })
+        );
       }
     });
 
-    spotMarkersRef.current.forEach((marker, key) => {
+    overlaysRef.current.forEach((overlay, key) => {
       if (!activeIds.has(key)) {
-        marker.remove();
-        spotMarkersRef.current.delete(key);
+        overlay.setMap(null);
+        overlaysRef.current.delete(key);
       }
     });
-  }, [spots, position, state]);
+  }, [spots, position, selectedSpot, state]);
+
+  // 5. 선택된 장소 변경 시 지도 중심 이동
+  useEffect(() => {
+    if (state !== 'ready' || !mapRef.current || !selectedSpot?.location || !window.kakao) return;
+    mapRef.current.panTo(new window.kakao.maps.LatLng(selectedSpot.location.lat, selectedSpot.location.lng));
+  }, [selectedSpot?.id, state]);
+
+  // 6. 테스트 모드 지도 클릭 이벤트 연동 (좌표 순간이동)
+  useEffect(() => {
+    if (state !== 'ready' || !onMapClick || !window.kakao || !mapRef.current) return;
+    const handler = (event: any) => onMapClick(event.latLng.getLat(), event.latLng.getLng());
+    window.kakao.maps.event.addListener(mapRef.current, 'click', handler);
+    return () => window.kakao?.maps?.event?.removeListener(mapRef.current, 'click', handler);
+  }, [state, onMapClick]);
 
   const moveToCurrentLocation = () => {
-    if (position && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [position.lng, position.lat],
-        zoom: 16,
-      });
+    if (position && mapRef.current && window.kakao) {
+      mapRef.current.setCenter(new window.kakao.maps.LatLng(position.lat, position.lng));
     }
+    onLocate?.();
   };
 
   return (
@@ -325,8 +256,8 @@ export function CheckInMap({ position, spots = [], selectedSpot: _selectedSpot, 
           {state === 'loading'
             ? '지도를 불러오는 중입니다.'
             : state === 'error'
-            ? '지도 키를 확인해주세요.'
-            : 'MapTiler 지도 키 설정 후 현재 위치 지도가 표시됩니다.'}
+            ? '카카오 지도 키를 확인해주세요.'
+            : 'Kakao 지도 키 설정 후 현재 위치 지도가 표시됩니다.'}
         </div>
       )}
       {rangeNotice && (
@@ -338,10 +269,7 @@ export function CheckInMap({ position, spots = [], selectedSpot: _selectedSpot, 
         type="button"
         className="map-preview__locate"
         aria-label="현재 위치로 이동"
-        onClick={() => {
-          moveToCurrentLocation();
-          onLocate?.();
-        }}
+        onClick={moveToCurrentLocation}
       >
         <Navigation size={19} />
       </button>

@@ -92,15 +92,17 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  transform-origin: 24% 87%;
-  animation: flagDropBounce 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  transition: transform 180ms ease, filter 180ms ease;
+  z-index: 5;
 }
 
 .kakao-flag-marker:hover,
 .kakao-flag-marker--selected {
-  transform: scale(1.18) translateY(-3px);
   z-index: 10;
+}
+
+.kakao-flag-marker:hover .kakao-flag-marker__inner,
+.kakao-flag-marker--selected .kakao-flag-marker__inner {
+  transform: scale(1.18) translateY(-3px);
 }
 
 .kakao-flag-marker--selected .kakao-flag-marker__img {
@@ -111,6 +113,9 @@
   position: relative;
   width: 44px;
   height: 44px;
+  transform-origin: 24% 87%;
+  animation: flagDropBounce 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  transition: transform 180ms ease, filter 180ms ease;
 }
 
 .kakao-flag-marker__img {

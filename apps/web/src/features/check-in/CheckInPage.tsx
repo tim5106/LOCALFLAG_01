@@ -39,16 +39,16 @@ export function CheckInPage() {
   const spotsQuery = useQuery({
     queryKey: ['check-in-spots', position?.lat, position?.lng],
     queryFn: async () => {
-      if (!position) return { data: [], meta: { nextCursor: null, hasNext: false } };
-      try {
-        const nearby = await getNearbySpots(position.lat, position.lng, 2_000, 20);
-        if (nearby.data.length > 0 || !import.meta.env.DEV) return nearby;
-      } catch (error) {
-        if (!import.meta.env.DEV) throw error;
+      if (position) {
+        try {
+          const nearby = await getNearbySpots(position.lat, position.lng, 2_000, 20);
+          if (nearby.data.length > 0 || !import.meta.env.DEV) return nearby;
+        } catch (error) {
+          if (!import.meta.env.DEV) throw error;
+        }
       }
       return getSpots({ areaCode: '1', sigunguCode: '23', limit: 20 });
     },
-    enabled: position !== null,
   });
 
   const requestLocation = () => {
@@ -110,7 +110,13 @@ export function CheckInPage() {
         }
       })
       .catch((caught) => {
-        if (!cancelled) setMessage(caught instanceof Error ? caught.message : '인증 가능 여부를 확인하지 못했습니다.');
+        if (!cancelled) {
+          const rawMessage = caught instanceof Error ? caught.message : '';
+          const friendly = rawMessage.toLowerCase().includes('token')
+            ? '로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해주세요.'
+            : (rawMessage || '인증 가능 여부를 확인하지 못했습니다.');
+          setMessage(friendly);
+        }
       });
     return () => {
       cancelled = true;
@@ -166,6 +172,13 @@ export function CheckInPage() {
     selectedSpot && !nearbySpots.some((spot) => spot.id === selectedSpot.id)
       ? [selectedSpot, ...nearbySpots]
       : nearbySpots;
+
+  // 장소가 아직 선택되지 않았다면 첫 번째 관광지를 기본 선택
+  useEffect(() => {
+    if (!selectedSpot && nearbySpots[0]) {
+      setSelectedSpot(nearbySpots[0]);
+    }
+  }, [nearbySpots, selectedSpot]);
 
   // 지역명 추출 (기본: 서울 종로구)
   const currentRegion = selectedSpot?.address
@@ -308,6 +321,32 @@ export function CheckInPage() {
               <p className="check-in-card-sub">
                 {selectedSpot?.address ?? '주변 탐색권 내 장소를 선택해주세요'}
               </p>
+              {import.meta.env.DEV && selectedSpot && (
+                <button
+                  type="button"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    margin: '6px 0 2px',
+                    padding: '4px 8px',
+                    background: '#e0f2fe',
+                    color: '#0369a1',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    border: '1px solid #bae6fd',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    setPosition({ lat: selectedSpot.location.lat + 0.0001, lng: selectedSpot.location.lng });
+                    setAccuracy(10);
+                    setState('measured');
+                  }}
+                >
+                  🧪 15m 거리로 순간이동 (인증 테스트)
+                </button>
+              )}
 
               <div className="check-in-card-reward">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -369,11 +408,52 @@ export function CheckInPage() {
           </button>
         </article>
 
-        {/* 에러 피드백 메시지 */}
+        {/* 에러 피드백 메시지 및 개발용 쿨다운 건너뛰기 */}
         {message && (
-          <p className="auth-error" role="alert" style={{ textAlign: 'center', marginTop: 4 }}>
-            {message}
-          </p>
+          <div style={{ textAlign: 'center', marginTop: 6 }}>
+            <p className="auth-error" role="alert">{message}</p>
+            {import.meta.env.DEV && selectedSpot && message.includes('대기 시간') && (
+              <button
+                type="button"
+                style={{
+                  marginTop: '8px',
+                  padding: '6px 12px',
+                  background: '#10B981',
+                  color: '#FFFFFF',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  setCompletedIds((ids) => (ids.includes(selectedSpot.id) ? ids : [...ids, selectedSpot.id]));
+                  queryClient.setQueryData(['my-map'], (old: any) => {
+                    const visits = old?.data?.visits ?? [];
+                    return {
+                      data: {
+                        equippedFlagSkinId: meQuery.profile?.equippedFlagSkinId ?? 'default-red',
+                        visits: [
+                          ...visits.filter((v: any) => v.spotId !== selectedSpot.id),
+                          {
+                            spotId: selectedSpot.id,
+                            spotTitle: selectedSpot.title,
+                            location: selectedSpot.location,
+                            visitedAt: new Date().toISOString(),
+                            rewardPoints: 150,
+                            status: 'SUCCESS',
+                          },
+                        ],
+                      },
+                    };
+                  });
+                  setMessage('✅ [개발용] 쿨다운을 우회하여 깃발을 꽂았습니다! [탐색] 탭을 눌러 확인하세요.');
+                }}
+              >
+                🧪 [개발용] 5분 대기 건너뛰고 깃발 즉시 꽂기 (테스트)
+              </button>
+            )}
+          </div>
         )}
       </div>
 
