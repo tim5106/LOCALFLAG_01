@@ -128,22 +128,23 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
 
         <div className="auth-judge-card" style={{ margin: '14px 0 6px', padding: '12px 14px', background: '#F4EFEB', borderRadius: '12px', border: '1px solid #D5C8B8', textAlign: 'center' }}>
           <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#173F35' }}>
-            🏛️ 심사위원 전용 평가 모드
+            🏛️ 공식 심사·평가용 테스트 계정 (자동 입력됨)
           </p>
+          <div style={{ margin: '6px 0 8px', padding: '8px 10px', background: '#EAE2D8', borderRadius: '6px', fontSize: '12px', color: '#2C3A35', lineHeight: 1.5 }}>
+            <div>아이디: <strong>{JUDGE_ACCOUNT.email}</strong></div>
+            <div>비밀번호: <strong>{JUDGE_ACCOUNT.password}</strong></div>
+          </div>
           <button
             type="button"
             className="primary-button"
-            style={{ width: '100%', background: '#173F35', color: '#FFF8E9', fontSize: '13px', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, border: 'none' }}
+            style={{ width: '100%', background: '#173F35', color: '#FFF8E9', fontSize: '13px', padding: '9px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, border: 'none' }}
             disabled={isLoading}
             onClick={handleJudgeLogin}
           >
-            🚀 1초 만에 심사위원 계정으로 시작하기
+            ⚡ 공식 평가 계정으로 즉시 로그인
           </button>
-          <div style={{ marginTop: '8px', padding: '6px 8px', background: '#EAE2D8', borderRadius: '6px', fontSize: '11px', color: '#485651' }}>
-            <span>테스트 계정: <strong>{JUDGE_ACCOUNT.email}</strong> / PW: <strong>{JUDGE_ACCOUNT.password}</strong></span>
-          </div>
-          <small style={{ display: 'block', marginTop: '6px', color: '#6A7873', fontSize: '10.5px', lineHeight: 1.3 }}>
-            * 버튼 클릭 시 공식 심사용 계정으로 즉시 자동 로그인됩니다.
+          <small style={{ display: 'block', marginTop: '6px', color: '#6A7873', fontSize: '11px', lineHeight: 1.3 }}>
+            * 폼에 정보가 이미 입력되어 있으므로 상단의 <strong>[로그인하기]</strong>를 바로 누르셔도 됩니다.
           </small>
         </div>
 

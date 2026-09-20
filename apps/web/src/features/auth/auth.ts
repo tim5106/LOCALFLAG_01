@@ -63,8 +63,8 @@ export async function signUp(email: string, password: string, nickname?: string)
 }
 
 export const JUDGE_ACCOUNT = {
-  email: 'traveler@example.com',
-  password: 'localflag',
+  email: 'openapi@example.com',
+  password: '2026openapi!',
 };
 
 export async function signInAsJudge(): Promise<AuthUser> {
