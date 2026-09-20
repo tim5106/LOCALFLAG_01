@@ -62,12 +62,13 @@ export async function signUp(email: string, password: string, nickname?: string)
   return user;
 }
 
-export async function createJudgeGuestUser(): Promise<AuthUser> {
-  const randomId = Math.random().toString(36).substring(2, 7);
-  const guestEmail = `judge_${randomId}@localflag.kr`;
-  const guestPw = `judge2026!`;
-  const guestNickname = `심사위원_${randomId}`;
-  return signUp(guestEmail, guestPw, guestNickname);
+export const JUDGE_ACCOUNT = {
+  email: 'traveler@example.com',
+  password: 'localflag',
+};
+
+export async function signInAsJudge(): Promise<AuthUser> {
+  return signIn(JUDGE_ACCOUNT.email, JUDGE_ACCOUNT.password);
 }
 
 export function signInAsDev(): AuthUser {

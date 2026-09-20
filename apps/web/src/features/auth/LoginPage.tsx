@@ -1,12 +1,12 @@
 import { Compass, LoaderCircle, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { createJudgeGuestUser, signIn, signInAsDev, signUp } from './auth';
+import { JUDGE_ACCOUNT, signIn, signInAsDev, signInAsJudge, signUp } from './auth';
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('traveler@example.com');
-  const [password, setPassword] = useState('localflag');
+  const [email, setEmail] = useState(JUDGE_ACCOUNT.email);
+  const [password, setPassword] = useState(JUDGE_ACCOUNT.password);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -32,10 +32,10 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
     setError('');
     setLoading(true);
     try {
-      await createJudgeGuestUser();
+      await signInAsJudge();
       onSignedIn();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '심사용 임시 계정 발급에 실패했습니다.');
+      setError(caught instanceof Error ? caught.message : '심사용 계정 로그인에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -127,8 +127,8 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
         </button>
 
         <div className="auth-judge-card" style={{ margin: '14px 0 6px', padding: '12px 14px', background: '#F4EFEB', borderRadius: '12px', border: '1px solid #D5C8B8', textAlign: 'center' }}>
-          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#173F35' }}>
-            🏛️ 심사위원 전용 원클릭 평가 모드
+          <p style={{ margin: '0 0 6px', fontSize: '12px', fontWeight: 700, color: '#173F35' }}>
+            🏛️ 심사위원 전용 평가 모드
           </p>
           <button
             type="button"
@@ -137,10 +137,13 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
             disabled={isLoading}
             onClick={handleJudgeLogin}
           >
-            🚀 1초 만에 심사용 새 계정으로 시작하기
+            🚀 1초 만에 심사위원 계정으로 시작하기
           </button>
-          <small style={{ display: 'block', marginTop: '6px', color: '#6A7873', fontSize: '11px', lineHeight: 1.3 }}>
-            * 개인정보 입력 없이 즉시 1,000P와 단독 계정이 자동 발급됩니다.
+          <div style={{ marginTop: '8px', padding: '6px 8px', background: '#EAE2D8', borderRadius: '6px', fontSize: '11px', color: '#485651' }}>
+            <span>테스트 계정: <strong>{JUDGE_ACCOUNT.email}</strong> / PW: <strong>{JUDGE_ACCOUNT.password}</strong></span>
+          </div>
+          <small style={{ display: 'block', marginTop: '6px', color: '#6A7873', fontSize: '10.5px', lineHeight: 1.3 }}>
+            * 버튼 클릭 시 공식 심사용 계정으로 즉시 자동 로그인됩니다.
           </small>
         </div>
 
