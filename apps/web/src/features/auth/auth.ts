@@ -62,6 +62,14 @@ export async function signUp(email: string, password: string, nickname?: string)
   return user;
 }
 
+export async function createJudgeGuestUser(): Promise<AuthUser> {
+  const randomId = Math.random().toString(36).substring(2, 7);
+  const guestEmail = `judge_${randomId}@localflag.kr`;
+  const guestPw = `judge2026!`;
+  const guestNickname = `심사위원_${randomId}`;
+  return signUp(guestEmail, guestPw, guestNickname);
+}
+
 export function signInAsDev(): AuthUser {
   if (!canUseDevelopmentAuth()) throw new Error('Development authentication is disabled.');
   const user = { id: 'dev-user', email: 'dev@localflag.dev', accessToken: devTestToken };

@@ -1,6 +1,6 @@
 import { Compass, LoaderCircle, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { signIn, signInAsDev, signUp } from './auth';
+import { createJudgeGuestUser, signIn, signInAsDev, signUp } from './auth';
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -23,6 +23,19 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
       onSignedIn();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : (isSignUp ? '회원가입에 실패했어요.' : '로그인에 실패했어요.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJudgeLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await createJudgeGuestUser();
+      onSignedIn();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '심사용 임시 계정 발급에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -112,6 +125,24 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
             '로그인하기'
           )}
         </button>
+
+        <div className="auth-judge-card" style={{ margin: '14px 0 6px', padding: '12px 14px', background: '#F4EFEB', borderRadius: '12px', border: '1px solid #D5C8B8', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', fontWeight: 700, color: '#173F35' }}>
+            🏛️ 심사위원 전용 원클릭 평가 모드
+          </p>
+          <button
+            type="button"
+            className="primary-button"
+            style={{ width: '100%', background: '#173F35', color: '#FFF8E9', fontSize: '13px', padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, border: 'none' }}
+            disabled={isLoading}
+            onClick={handleJudgeLogin}
+          >
+            🚀 1초 만에 심사용 새 계정으로 시작하기
+          </button>
+          <small style={{ display: 'block', marginTop: '6px', color: '#6A7873', fontSize: '11px', lineHeight: 1.3 }}>
+            * 개인정보 입력 없이 즉시 1,000P와 단독 계정이 자동 발급됩니다.
+          </small>
+        </div>
 
         {import.meta.env.DEV && (
           <button
