@@ -1,12 +1,12 @@
 import { Compass, LoaderCircle, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { signIn, signInAsDev, signUp } from './auth';
+import { JUDGE_ACCOUNT, signIn, signInAsDev, signUp } from './auth';
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [nickname, setNickname] = useState('');
-  const [email, setEmail] = useState('traveler@example.com');
-  const [password, setPassword] = useState('localflag');
+  const [email, setEmail] = useState(JUDGE_ACCOUNT.email);
+  const [password, setPassword] = useState(JUDGE_ACCOUNT.password);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

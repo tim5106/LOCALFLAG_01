@@ -62,6 +62,15 @@ export async function signUp(email: string, password: string, nickname?: string)
   return user;
 }
 
+export const JUDGE_ACCOUNT = {
+  email: 'openapi@example.com',
+  password: '2026openapi!',
+};
+
+export async function signInAsJudge(): Promise<AuthUser> {
+  return signIn(JUDGE_ACCOUNT.email, JUDGE_ACCOUNT.password);
+}
+
 export function signInAsDev(): AuthUser {
   if (!canUseDevelopmentAuth()) throw new Error('Development authentication is disabled.');
   const user = { id: 'dev-user', email: 'dev@localflag.dev', accessToken: devTestToken };
